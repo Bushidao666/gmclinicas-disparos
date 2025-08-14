@@ -164,9 +164,9 @@ export default function DashboardPage() {
       
       return data?.map(c => ({
         name: c.campaign_name,
-        enviadas: c.sent_targets,
-        respostas: c.positive_responses + c.unsubscribe_responses,
-        taxa: c.response_rate,
+        enviadas: c.sent_count || 0,
+        respostas: (c.positive_responses || 0) + (c.unsubscribe_count || 0),
+        taxa: c.sent_count > 0 ? ((c.positive_responses || 0) + (c.unsubscribe_count || 0)) / c.sent_count * 100 : 0,
       })) ?? [];
     },
   });
