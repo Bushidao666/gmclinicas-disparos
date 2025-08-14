@@ -17,7 +17,7 @@ export function createSupabaseClient() {
           "X-Client-Info": "mgclinic-web",
         },
       },
-    }
+    },
   );
 }
 

@@ -13,11 +13,11 @@ import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import Image from "next/image";
 import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useClients } from "@/hooks/useClients";
 import { CreateClientModal } from "@/components/CreateClientModal";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface Client {
   id: string;
@@ -36,34 +36,35 @@ export default function ClientsPage() {
     channel: "clients-changes",
     table: "clients",
     onInsert: (payload) => {
-      console.log("✨ Novo cliente:", payload.new);
-      
       // Atualizar cache do React Query otimisticamente
       queryClient.setQueryData(["clients"], (old: Client[] | undefined) => {
         if (!old) return [payload.new as Client];
-        return [...old, payload.new as Client].sort((a, b) => 
-          a.name.localeCompare(b.name)
+
+        return [...old, payload.new as Client].sort((a, b) =>
+          a.name.localeCompare(b.name),
         );
       });
     },
     onUpdate: (payload) => {
-      console.log("📝 Cliente atualizado:", payload.new);
-      
       // Atualizar cache do React Query
       queryClient.setQueryData(["clients"], (old: Client[] | undefined) => {
         if (!old) return [payload.new as Client];
-        return old.map(client => 
-          client.id === (payload.new as Client).id ? payload.new as Client : client
-        ).sort((a, b) => a.name.localeCompare(b.name));
+
+        return old
+          .map((client) =>
+            client.id === (payload.new as Client).id
+              ? (payload.new as Client)
+              : client,
+          )
+          .sort((a, b) => a.name.localeCompare(b.name));
       });
     },
     onDelete: (payload) => {
-      console.log("🗑️ Cliente removido:", payload.old);
-      
       // Remover do cache
       queryClient.setQueryData(["clients"], (old: Client[] | undefined) => {
         if (!old) return [];
-        return old.filter(client => client.id !== (payload.old as Client).id);
+
+        return old.filter((client) => client.id !== (payload.old as Client).id);
       });
     },
   });
@@ -90,15 +91,12 @@ export default function ClientsPage() {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
-          <Button 
-            color="primary" 
-            onPress={() => setIsModalOpen(true)}
-          >
+          <Button color="primary" onPress={() => setIsModalOpen(true)}>
             Novo Cliente
           </Button>
         </div>
       </div>
-      
+
       <div className="bg-content1 rounded-large p-2">
         <Table aria-label="Lista de clientes">
           <TableHeader>
@@ -141,8 +139,8 @@ export default function ClientsPage() {
           </TableBody>
         </Table>
       </div>
-      
-      <CreateClientModal 
+
+      <CreateClientModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />

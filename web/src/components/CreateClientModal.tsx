@@ -12,6 +12,7 @@ import { Input } from "@heroui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+
 import { useCreateClient } from "@/hooks/useCreateClient";
 
 const schema = z.object({
@@ -28,7 +29,7 @@ interface CreateClientModalProps {
 
 export function CreateClientModal({ isOpen, onClose }: CreateClientModalProps) {
   const createClient = useCreateClient();
-  
+
   const {
     register,
     handleSubmit,
@@ -47,7 +48,7 @@ export function CreateClientModal({ isOpen, onClose }: CreateClientModalProps) {
       reset();
       onClose();
     } catch (error) {
-      console.error("Erro ao criar cliente:", error);
+      // Erro ao criar cliente
     }
   };
 
@@ -68,9 +69,9 @@ export function CreateClientModal({ isOpen, onClose }: CreateClientModalProps) {
               label="Nome do Cliente"
               placeholder="Ex: Clínica Odontológica"
               {...register("name")}
+              isRequired
               errorMessage={errors.name?.message}
               isInvalid={!!errors.name}
-              isRequired
             />
             <Input
               label="URL da Foto (opcional)"
@@ -84,10 +85,10 @@ export function CreateClientModal({ isOpen, onClose }: CreateClientModalProps) {
             <Button color="danger" variant="light" onPress={handleClose}>
               Cancelar
             </Button>
-            <Button 
-              color="primary" 
-              type="submit"
+            <Button
+              color="primary"
               isLoading={createClient.isPending}
+              type="submit"
             >
               Criar Cliente
             </Button>

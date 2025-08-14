@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { RealtimeChannel } from "@supabase/supabase-js";
+
 import { createSupabaseClient } from "@/lib/supabaseClient";
 
 interface RealtimeContextType {
@@ -18,9 +19,11 @@ const RealtimeContext = createContext<RealtimeContextType>({
 
 export function useRealtime() {
   const context = useContext(RealtimeContext);
+
   if (!context) {
     throw new Error("useRealtime must be used within RealtimeProvider");
   }
+
   return context;
 }
 
@@ -30,7 +33,9 @@ interface RealtimeProviderProps {
 
 export function RealtimeProvider({ children }: RealtimeProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
-  const [globalChannel, setGlobalChannel] = useState<RealtimeChannel | null>(null);
+  const [globalChannel, setGlobalChannel] = useState<RealtimeChannel | null>(
+    null,
+  );
   const supabase = createSupabaseClient();
 
   useEffect(() => {
@@ -40,7 +45,7 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
         config: {
           broadcast: {
             self: true, // Receber próprias mensagens
-            ack: true,  // Aguardar confirmação do servidor
+            ack: true, // Aguardar confirmação do servidor
           },
         },
       })
@@ -99,7 +104,9 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
   };
 
   return (
-    <RealtimeContext.Provider value={{ isConnected, globalChannel, sendBroadcast }}>
+    <RealtimeContext.Provider
+      value={{ isConnected, globalChannel, sendBroadcast }}
+    >
       {children}
     </RealtimeContext.Provider>
   );

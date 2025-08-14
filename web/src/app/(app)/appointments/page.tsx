@@ -175,15 +175,13 @@ export default function AppointmentsPage() {
               placeholder="Todos os clientes"
               value={selectedClientId}
               onChange={(e) => setSelectedClientId(e.target.value)}
+              items={[{ id: "", name: "Todos os clientes" }, ...(clients || [])]}
             >
-              <SelectItem key="" value="">
-                Todos os clientes
-              </SelectItem>
-              {clients?.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
+              {(item) => (
+                <SelectItem key={item.id}>
+                  {item.name}
                 </SelectItem>
-              ))}
+              )}
             </Select>
 
             <Select
@@ -191,15 +189,13 @@ export default function AppointmentsPage() {
               label="Status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              items={[{ value: "all", label: "Todos" }, ...statusOptions]}
             >
-              <SelectItem key="all" value="all">
-                Todos
-              </SelectItem>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+              {(item) => (
+                <SelectItem key={item.value}>
+                  {item.label}
                 </SelectItem>
-              ))}
+              )}
             </Select>
           </div>
 
@@ -346,12 +342,13 @@ export default function AppointmentsPage() {
                           label="Status"
                           value={editStatus}
                           onChange={(e) => setEditStatus(e.target.value)}
+                          items={statusOptions}
                         >
-                          {statusOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
+                          {(item) => (
+                            <SelectItem key={item.value}>
+                              {item.label}
                             </SelectItem>
-                          ))}
+                          )}
                         </Select>
 
                         <div className="grid grid-cols-2 gap-4">

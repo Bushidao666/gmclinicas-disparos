@@ -191,12 +191,13 @@ export default function UploadLeadsPage() {
             placeholder="Selecione o cliente"
             value={clientId}
             onChange={(e) => setClientId(e.target.value)}
+            items={clients || []}
           >
-            {clients?.map((client) => (
-              <SelectItem key={client.id} value={client.id}>
+            {(client) => (
+              <SelectItem key={client.id}>
                 {client.name}
               </SelectItem>
-            ))}
+            )}
           </Select>
 
           <div className="space-y-2">

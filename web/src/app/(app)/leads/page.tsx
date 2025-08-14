@@ -21,7 +21,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function LeadsPage() {
   const { data: clients = [] } = useClients();
-  const [result, setResult] = useState<unknown>(null);
+  const [result, setResult] = useState<any>(null);
   const {
     register,
     handleSubmit,
@@ -70,12 +70,13 @@ export default function LeadsPage() {
               label="Cliente"
               selectedKeys={watch("client_id") ? [watch("client_id")] : []}
               onChange={(e) => setValue("client_id", e.target.value)}
+              items={clients}
             >
-              {clients.map((c) => (
-                <SelectItem key={c.id} textValue={c.name} value={c.id}>
-                  {c.name}
+              {(client) => (
+                <SelectItem key={client.id} textValue={client.name}>
+                  {client.name}
                 </SelectItem>
-              ))}
+              )}
             </Select>
 
             <Textarea

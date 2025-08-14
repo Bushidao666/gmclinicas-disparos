@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
+
 import { createSupabaseClient } from "@/lib/supabaseClient";
 
 interface Client {
@@ -28,12 +29,21 @@ interface InstanceCardProps {
   onUpdate?: () => void;
 }
 
-export function InstanceCard({ instance, clients, onUpdate }: InstanceCardProps) {
+export function InstanceCard({
+  instance,
+  clients,
+  onUpdate,
+}: InstanceCardProps) {
   const supabase = createSupabaseClient();
-  const [selectedClientId, setSelectedClientId] = useState<string>(instance.client_id || "");
+  const [selectedClientId, setSelectedClientId] = useState<string>(
+    instance.client_id || "",
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isConfiguringWebhook, setIsConfiguringWebhook] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Atualizar quando a instância mudar (via Realtime)
   useEffect(() => {
@@ -49,10 +59,12 @@ export function InstanceCard({ instance, clients, onUpdate }: InstanceCardProps)
     // Confirmar desvinculação
     if (instance.client_id && !selectedClientId) {
       const confirm = window.confirm(
-        "Tem certeza que deseja desvincular este cliente da instância?"
+        "Tem certeza que deseja desvincular este cliente da instância?",
       );
+
       if (!confirm) {
         setSelectedClientId(instance.client_id);
+
         return;
       }
     }
@@ -72,7 +84,7 @@ export function InstanceCard({ instance, clients, onUpdate }: InstanceCardProps)
       setTimeout(() => setMessage(null), 3000);
       onUpdate?.();
     } catch (error: any) {
-      console.error("Erro ao salvar:", error);
+      // Erro ao salvar
       setMessage({ type: "error", text: error.message || "Erro ao salvar" });
       setSelectedClientId(instance.client_id || ""); // Reverter
     } finally {
@@ -93,6 +105,7 @@ export function InstanceCard({ instance, clients, onUpdate }: InstanceCardProps)
 
       if (!res.ok) {
         const error = await res.json();
+
         throw new Error(error.error || "Falha ao configurar webhook");
       }
 
@@ -105,7 +118,7 @@ export function InstanceCard({ instance, clients, onUpdate }: InstanceCardProps)
     }
   };
 
-  const selectedClient = clients.find(c => c.id === selectedClientId);
+  const selectedClient = clients.find((c) => c.id === selectedClientId);
 
   return (
     <Card className="w-full max-w-sm hover:shadow-lg transition-shadow">
@@ -131,22 +144,24 @@ export function InstanceCard({ instance, clients, onUpdate }: InstanceCardProps)
         {/* Status da conexão */}
         {instance.last_connected_at && (
           <div className="text-xs text-gray-500">
-            Última conexão: {new Date(instance.last_connected_at).toLocaleString("pt-BR")}
+            Última conexão:{" "}
+            {new Date(instance.last_connected_at).toLocaleString("pt-BR")}
           </div>
         )}
 
         {/* Seleção de Cliente */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Cliente Vinculado:</label>
+          <label htmlFor={`client-select-${instance.id}`} className="text-sm font-medium">Cliente Vinculado:</label>
           <select
+            id={`client-select-${instance.id}`}
             className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors ${
-              isDirty 
-                ? "border-blue-500 bg-blue-50" 
+              isDirty
+                ? "border-blue-500 bg-blue-50"
                 : "border-gray-200 hover:border-gray-300"
             } ${!selectedClientId ? "text-gray-500" : "text-gray-900"}`}
+            disabled={isSaving}
             value={selectedClientId}
             onChange={(e) => setSelectedClientId(e.target.value)}
-            disabled={isSaving}
           >
             <option value="">Sem vínculo</option>
             {clients.map((client) => (
@@ -161,9 +176,9 @@ export function InstanceCard({ instance, clients, onUpdate }: InstanceCardProps)
             <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
               {selectedClient.photo_url ? (
                 <img
-                  src={selectedClient.photo_url}
                   alt={selectedClient.name}
                   className="w-6 h-6 rounded-full"
+                  src={selectedClient.photo_url}
                 />
               ) : (
                 <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
@@ -191,22 +206,22 @@ export function InstanceCard({ instance, clients, onUpdate }: InstanceCardProps)
         {/* Ações */}
         <div className="flex gap-2">
           <Button
-            size="sm"
+            className="flex-1"
             color="primary"
-            variant={isDirty ? "solid" : "flat"}
             isDisabled={!isDirty}
             isLoading={isSaving}
+            size="sm"
+            variant={isDirty ? "solid" : "flat"}
             onPress={handleSave}
-            className="flex-1"
           >
             {isDirty ? "Salvar Alteração" : "Atualizado"}
           </Button>
 
           <Button
-            size="sm"
             color="secondary"
-            variant="flat"
             isLoading={isConfiguringWebhook}
+            size="sm"
+            variant="flat"
             onPress={handleConfigureWebhook}
           >
             Webhook

@@ -9,28 +9,32 @@ export async function POST(req: Request) {
     if (!body.client_id) {
       return NextResponse.json(
         { error: "client_id é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!body.leads || !Array.isArray(body.leads) || body.leads.length === 0) {
       return NextResponse.json(
         { error: "leads deve ser um array não vazio" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Obter o Authorization header do usuário
     const authHeader = req.headers.get("Authorization");
-    
+
     // Se não tiver Authorization, usar o ANON key
-    const authorization = authHeader || `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`;
+    const authorization =
+      authHeader || `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`;
 
     if (!authorization || authorization === "Bearer undefined") {
-      console.error("Authorization header missing and NEXT_PUBLIC_SUPABASE_ANON_KEY not set");
+      console.error(
+        "Authorization header missing and NEXT_PUBLIC_SUPABASE_ANON_KEY not set",
+      );
+
       return NextResponse.json(
         { error: "Erro de autenticação. Por favor, faça login novamente." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -46,7 +50,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": authorization,
+        Authorization: authorization,
       },
       body: JSON.stringify(body),
     });
@@ -54,7 +58,7 @@ export async function POST(req: Request) {
     // Obter resposta
     const responseText = await res.text();
     let data;
-    
+
     try {
       data = JSON.parse(responseText);
     } catch (e) {
@@ -75,18 +79,23 @@ export async function POST(req: Request) {
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
     console.error("API Route error:", error);
-    
+
     // Tratamento de erro mais específico
     if (error instanceof SyntaxError) {
       return NextResponse.json(
         { error: "Dados inválidos. Verifique o formato do arquivo CSV." },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erro desconhecido ao processar upload" },
-      { status: 500 }
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Erro desconhecido ao processar upload",
+      },
+      { status: 500 },
     );
   }
 }

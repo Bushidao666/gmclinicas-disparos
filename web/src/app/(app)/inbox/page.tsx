@@ -212,15 +212,13 @@ export default function InboxPage() {
               placeholder="Todos os clientes"
               value={selectedClientId}
               onChange={(e) => setSelectedClientId(e.target.value)}
+              items={[{ id: "", name: "Todos os clientes" }, ...(clients || [])]}
             >
-              <SelectItem key="" value="">
-                Todos os clientes
-              </SelectItem>
-              {clients?.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
+              {(item) => (
+                <SelectItem key={item.id}>
+                  {item.name}
                 </SelectItem>
-              ))}
+              )}
             </Select>
 
             <Select
@@ -228,19 +226,18 @@ export default function InboxPage() {
               label="Tipo de Resposta"
               value={responseFilter}
               onChange={(e) => setResponseFilter(e.target.value as any)}
+              items={[
+                { key: "all", label: "Todas" },
+                { key: "positive", label: "Interessados" },
+                { key: "unsubscribe", label: "Descadastros" },
+                { key: "unanswered", label: "Sem classificação" }
+              ]}
             >
-              <SelectItem key="all" value="all">
-                Todas
-              </SelectItem>
-              <SelectItem key="positive" value="positive">
-                Interessados
-              </SelectItem>
-              <SelectItem key="unsubscribe" value="unsubscribe">
-                Descadastros
-              </SelectItem>
-              <SelectItem key="unanswered" value="unanswered">
-                Sem classificação
-              </SelectItem>
+              {(item) => (
+                <SelectItem key={item.key}>
+                  {item.label}
+                </SelectItem>
+              )}
             </Select>
 
             <Input

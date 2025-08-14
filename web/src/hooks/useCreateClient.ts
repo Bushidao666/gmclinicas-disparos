@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { createSupabaseClient } from "@/lib/supabaseClient";
 
 interface CreateClientInput {
@@ -13,7 +14,10 @@ export function useCreateClient() {
   return useMutation({
     mutationFn: async (input: CreateClientInput) => {
       // Autenticação simples: requer usuário logado, sem hierarquia de agência
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) throw new Error("Usuário não autenticado");
 
       const { data, error } = await supabase
@@ -26,6 +30,7 @@ export function useCreateClient() {
         .single();
 
       if (error) throw error;
+
       return data;
     },
     onSuccess: () => {

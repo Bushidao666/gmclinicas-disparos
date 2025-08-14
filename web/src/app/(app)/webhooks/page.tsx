@@ -40,11 +40,13 @@ export default function WebhooksPage() {
     queryFn: async (): Promise<WebhookEvent[]> => {
       let query = supabase
         .from("webhook_events")
-        .select(`
+        .select(
+          `
           *,
           client:clients(name),
           instance:evoapi_instances(name, instance_id)
-        `)
+        `,
+        )
         .order("received_at", { ascending: false })
         .limit(100);
 
@@ -53,7 +55,9 @@ export default function WebhooksPage() {
       }
 
       const { data, error } = await query;
+
       if (error) throw error;
+
       return data as any;
     },
   });
@@ -63,10 +67,12 @@ export default function WebhooksPage() {
     queryFn: async () => {
       let query = supabase
         .from("responses")
-        .select(`
+        .select(
+          `
           *,
           lead:leads(full_name, whatsapp_e164)
-        `)
+        `,
+        )
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -75,7 +81,9 @@ export default function WebhooksPage() {
       }
 
       const { data, error } = await query;
+
       if (error) throw error;
+
       return data;
     },
   });
@@ -85,9 +93,9 @@ export default function WebhooksPage() {
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">Monitoramento de Webhooks</h1>
         <Select
+          aria-label="Filtrar por cliente"
           className="max-w-xs"
           label="Filtrar por cliente"
-          aria-label="Filtrar por cliente"
           selectedKeys={selectedClientId ? [selectedClientId] : []}
           onChange={(e) => setSelectedClientId(e.target.value)}
         >
@@ -110,7 +118,10 @@ export default function WebhooksPage() {
           <CardBody>
             <div className="space-y-2">
               {responses?.slice(0, 5).map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between p-2 bg-content2 rounded">
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between p-2 bg-content2 rounded"
+                >
                   <div>
                     <p className="font-medium">
                       {r.lead?.full_name || r.lead?.whatsapp_e164}
@@ -120,16 +131,28 @@ export default function WebhooksPage() {
                     </p>
                   </div>
                   <Chip
-                    color={r.type === "positive" ? "success" : r.type === "unsubscribe" ? "danger" : "default"}
+                    color={
+                      r.type === "positive"
+                        ? "success"
+                        : r.type === "unsubscribe"
+                          ? "danger"
+                          : "default"
+                    }
                     size="sm"
                     variant="flat"
                   >
-                    {r.type === "positive" ? "Interessado" : r.type === "unsubscribe" ? "Sair" : r.type}
+                    {r.type === "positive"
+                      ? "Interessado"
+                      : r.type === "unsubscribe"
+                        ? "Sair"
+                        : r.type}
                   </Chip>
                 </div>
               ))}
               {(!responses || responses.length === 0) && (
-                <p className="text-default-500 text-center py-4">Nenhuma resposta ainda</p>
+                <p className="text-default-500 text-center py-4">
+                  Nenhuma resposta ainda
+                </p>
               )}
             </div>
           </CardBody>
@@ -148,19 +171,21 @@ export default function WebhooksPage() {
               <div>
                 <p className="text-sm text-default-500">Respostas Positivas</p>
                 <p className="text-2xl font-bold text-success">
-                  {responses?.filter((r: any) => r.type === "positive").length || 0}
+                  {responses?.filter((r: any) => r.type === "positive")
+                    .length || 0}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-default-500">Desinscrições</p>
                 <p className="text-2xl font-bold text-danger">
-                  {responses?.filter((r: any) => r.type === "unsubscribe").length || 0}
+                  {responses?.filter((r: any) => r.type === "unsubscribe")
+                    .length || 0}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-default-500">Assinatura Válida</p>
                 <p className="text-2xl font-bold">
-                  {events.filter(e => e.signature_valid).length}
+                  {events.filter((e) => e.signature_valid).length}
                 </p>
               </div>
             </div>
@@ -191,9 +216,7 @@ export default function WebhooksPage() {
                   <TableCell className="text-sm">
                     {format(new Date(item.received_at), "dd/MM HH:mm:ss")}
                   </TableCell>
-                  <TableCell>
-                    {item.client?.name || "—"}
-                  </TableCell>
+                  <TableCell>{item.client?.name || "—"}</TableCell>
                   <TableCell className="text-xs font-mono">
                     {item.instance?.name || item.instance?.instance_id || "—"}
                   </TableCell>

@@ -16,7 +16,7 @@ const schema = z.object({
   client_id: z.string().min(1, "Selecione um cliente"),
   name: z.string().min(2),
   start_at: z.string().min(10, "Informe uma data ISO"),
-  daily_volume: z.coerce.number().min(1),
+  daily_volume: z.number().min(1),
   content_type: z.enum(["text", "image", "video", "audio", "document"]),
   caption_text: z.string().optional().nullable(),
   evoapi_instance_id: z.string().optional().nullable(),
@@ -28,7 +28,7 @@ export default function CampaignsPage() {
   const { data: clients = [] } = useClients();
   const [clientId, setClientId] = useState<string | undefined>(undefined);
   const { data: instances = [] } = useEvoInstances(clientId);
-  const [result, setResult] = useState<unknown>(null);
+  const [result, setResult] = useState<any>(null);
 
   const {
     register,
@@ -70,12 +70,7 @@ export default function CampaignsPage() {
     <main className="p-6 grid gap-4 max-w-2xl mx-auto">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Criar Campanha</h1>
-        <Button
-          as="a"
-          href="/campaigns/create"
-          color="primary"
-          variant="flat"
-        >
+        <Button as="a" color="primary" href="/campaigns/create" variant="flat">
           Usar Wizard
         </Button>
       </div>
@@ -94,12 +89,13 @@ export default function CampaignsPage() {
             setValue("client_id", id);
             setClientId(id);
           }}
+          items={clients}
         >
-          {clients.map((c) => (
-            <SelectItem key={c.id} textValue={c.name} value={c.id}>
-              {c.name}
+          {(client) => (
+            <SelectItem key={client.id} textValue={client.name}>
+              {client.name}
             </SelectItem>
-          ))}
+          )}
         </Select>
 
         <Input
@@ -128,13 +124,12 @@ export default function CampaignsPage() {
           onChange={(e) =>
             setValue("content_type", e.target.value as FormData["content_type"])
           }
+          items={["text", "image", "video", "audio", "document"].map(t => ({ value: t, label: t }))}
         >
-          {(["text", "image", "video", "audio", "document"] as const).map(
-            (t) => (
-              <SelectItem key={t} value={t}>
-                {t}
-              </SelectItem>
-            ),
+          {(item) => (
+            <SelectItem key={item.value}>
+              {item.label}
+            </SelectItem>
           )}
         </Select>
         <Input label="Legenda (opcional)" {...register("caption_text")} />
@@ -170,16 +165,16 @@ export default function CampaignsPage() {
               : []
           }
           onChange={(e) => setValue("evoapi_instance_id", e.target.value)}
+          items={instances}
         >
-          {instances.map((it) => (
+          {(instance) => (
             <SelectItem
-              key={it.id}
-              textValue={it.name ?? it.instance_id}
-              value={it.id}
+              key={instance.id}
+              textValue={instance.name ?? instance.instance_id}
             >
-              {it.name ?? it.instance_id}
+              {instance.name ?? instance.instance_id}
             </SelectItem>
-          ))}
+          )}
         </Select>
 
         <Button color="primary" isLoading={isSubmitting} type="submit">

@@ -20,17 +20,14 @@ export async function POST(req: Request) {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
 
-    const res = await fetch(
-      `${SUPABASE_URL}/functions/v1/create-campaign`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(body),
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-campaign`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-    );
+      body: JSON.stringify(body),
+    });
     const data = await res.json();
 
     return NextResponse.json(data, { status: res.status });

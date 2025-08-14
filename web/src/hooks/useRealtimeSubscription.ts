@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+} from "@supabase/supabase-js";
+
 import { createSupabaseClient } from "@/lib/supabaseClient";
 
 type PostgresChangeEvent = "INSERT" | "UPDATE" | "DELETE" | "*";
@@ -71,7 +75,7 @@ export function useRealtimeSubscription({
               onDelete?.(payload);
               break;
           }
-        }
+        },
       );
     }
 
@@ -120,7 +124,7 @@ export function useRealtimeSubscription({
 export function useRealtimeBroadcast(
   channelName: string,
   onMessage?: (payload: any) => void,
-  enabled = true
+  enabled = true,
 ) {
   const supabase = createSupabaseClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -161,7 +165,7 @@ export function useRealtimeBroadcast(
 export function useRealtimePresence(
   channelName: string,
   userState: any,
-  enabled = true
+  enabled = true,
 ) {
   const supabase = createSupabaseClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -174,6 +178,7 @@ export function useRealtimePresence(
     channelRef.current
       .on("presence", { event: "sync" }, () => {
         const state = channelRef.current?.presenceState();
+
         console.log("Presence state:", state);
       })
       .on("presence", { event: "join" }, ({ key, newPresences }) => {

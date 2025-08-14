@@ -38,7 +38,9 @@ export default function DashboardPage() {
     queryFn: async () => {
       let campaignsQuery = supabase.from("campaigns").select("id, status");
       let leadsQuery = supabase.from("leads").select("id, is_opted_out");
-      let outboundQuery = supabase.from("messages_outbound").select("id, status");
+      let outboundQuery = supabase
+        .from("messages_outbound")
+        .select("id, status");
       let inboundQuery = supabase.from("messages_inbound").select("id");
 
       if (selectedClientId) {
@@ -57,11 +59,14 @@ export default function DashboardPage() {
 
       return {
         totalCampaigns: campaigns.data?.length ?? 0,
-        activeCampaigns: campaigns.data?.filter(c => c.status === "active").length ?? 0,
+        activeCampaigns:
+          campaigns.data?.filter((c) => c.status === "active").length ?? 0,
         totalLeads: leads.data?.length ?? 0,
-        activeLeads: leads.data?.filter(l => !l.is_opted_out).length ?? 0,
-        messagesSent: outbound.data?.filter(m => m.status === "sent").length ?? 0,
-        messagesFailed: outbound.data?.filter(m => m.status === "failed").length ?? 0,
+        activeLeads: leads.data?.filter((l) => !l.is_opted_out).length ?? 0,
+        messagesSent:
+          outbound.data?.filter((m) => m.status === "sent").length ?? 0,
+        messagesFailed:
+          outbound.data?.filter((m) => m.status === "failed").length ?? 0,
         messagesReceived: inbound.data?.length ?? 0,
       };
     },
@@ -89,14 +94,16 @@ export default function DashboardPage() {
 
       // Agrupar por dia
       const groupedData: Record<string, { sent: number; failed: number }> = {};
-      
+
       for (let i = 0; i < days; i++) {
         const date = format(subDays(new Date(), days - 1 - i), "dd/MM");
+
         groupedData[date] = { sent: 0, failed: 0 };
       }
 
       data?.forEach((msg) => {
         const date = format(new Date(msg.created_at), "dd/MM");
+
         if (groupedData[date]) {
           if (msg.status === "sent") {
             groupedData[date].sent++;
@@ -118,9 +125,7 @@ export default function DashboardPage() {
   const { data: responseTypes } = useQuery({
     queryKey: ["dashboard-response-types", selectedClientId],
     queryFn: async () => {
-      let query = supabase
-        .from("responses")
-        .select("type");
+      let query = supabase.from("responses").select("type");
 
       if (selectedClientId) {
         query = query.eq("client_id", selectedClientId);
@@ -142,7 +147,7 @@ export default function DashboardPage() {
         { name: "Interessados", value: counts.positive, color: "#00C49F" },
         { name: "Descadastros", value: counts.unsubscribe, color: "#FF8042" },
         { name: "Outros", value: counts.other, color: "#8884D8" },
-      ].filter(item => item.value > 0);
+      ].filter((item) => item.value > 0);
     },
   });
 
@@ -161,13 +166,20 @@ export default function DashboardPage() {
       }
 
       const { data } = await query;
-      
-      return data?.map(c => ({
-        name: c.campaign_name,
-        enviadas: c.sent_count || 0,
-        respostas: (c.positive_responses || 0) + (c.unsubscribe_count || 0),
-        taxa: c.sent_count > 0 ? ((c.positive_responses || 0) + (c.unsubscribe_count || 0)) / c.sent_count * 100 : 0,
-      })) ?? [];
+
+      return (
+        data?.map((c) => ({
+          name: c.campaign_name,
+          enviadas: c.sent_count || 0,
+          respostas: (c.positive_responses || 0) + (c.unsubscribe_count || 0),
+          taxa:
+            c.sent_count > 0
+              ? (((c.positive_responses || 0) + (c.unsubscribe_count || 0)) /
+                  c.sent_count) *
+                100
+              : 0,
+        })) ?? []
+      );
     },
   });
 
@@ -177,23 +189,31 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <div className="flex gap-4">
           <Select
-            label="Período"
             className="w-32"
+            label="Período"
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
           >
-            <SelectItem key="7" value="7">7 dias</SelectItem>
-            <SelectItem key="15" value="15">15 dias</SelectItem>
-            <SelectItem key="30" value="30">30 dias</SelectItem>
+            <SelectItem key="7" value="7">
+              7 dias
+            </SelectItem>
+            <SelectItem key="15" value="15">
+              15 dias
+            </SelectItem>
+            <SelectItem key="30" value="30">
+              30 dias
+            </SelectItem>
           </Select>
           <Select
+            className="w-48"
             label="Cliente"
             placeholder="Todos"
-            className="w-48"
             value={selectedClientId}
             onChange={(e) => setSelectedClientId(e.target.value)}
           >
-            <SelectItem key="" value="">Todos os clientes</SelectItem>
+            <SelectItem key="" value="">
+              Todos os clientes
+            </SelectItem>
             {clients?.map((client) => (
               <SelectItem key={client.id} value={client.id}>
                 {client.name}
@@ -210,7 +230,9 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-600">Total de Campanhas</p>
           </CardHeader>
           <CardBody>
-            <p className="text-3xl font-bold">{generalMetrics?.totalCampaigns ?? 0}</p>
+            <p className="text-3xl font-bold">
+              {generalMetrics?.totalCampaigns ?? 0}
+            </p>
             <p className="text-sm text-green-600">
               {generalMetrics?.activeCampaigns ?? 0} ativas
             </p>
@@ -222,7 +244,9 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-600">Total de Leads</p>
           </CardHeader>
           <CardBody>
-            <p className="text-3xl font-bold">{generalMetrics?.totalLeads ?? 0}</p>
+            <p className="text-3xl font-bold">
+              {generalMetrics?.totalLeads ?? 0}
+            </p>
             <p className="text-sm text-green-600">
               {generalMetrics?.activeLeads ?? 0} ativos
             </p>
@@ -234,7 +258,9 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-600">Mensagens Enviadas</p>
           </CardHeader>
           <CardBody>
-            <p className="text-3xl font-bold">{generalMetrics?.messagesSent ?? 0}</p>
+            <p className="text-3xl font-bold">
+              {generalMetrics?.messagesSent ?? 0}
+            </p>
             <p className="text-sm text-red-600">
               {generalMetrics?.messagesFailed ?? 0} falhadas
             </p>
@@ -246,7 +272,9 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-600">Mensagens Recebidas</p>
           </CardHeader>
           <CardBody>
-            <p className="text-3xl font-bold">{generalMetrics?.messagesReceived ?? 0}</p>
+            <p className="text-3xl font-bold">
+              {generalMetrics?.messagesReceived ?? 0}
+            </p>
           </CardBody>
         </Card>
       </div>
@@ -259,7 +287,7 @@ export default function DashboardPage() {
             <h3 className="text-lg font-semibold">Mensagens por Dia</h3>
           </CardHeader>
           <CardBody>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer height={300} width="100%">
               <LineChart data={dailyMessages}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
@@ -267,16 +295,16 @@ export default function DashboardPage() {
                 <Tooltip />
                 <Legend />
                 <Line
-                  type="monotone"
                   dataKey="enviadas"
                   stroke="#00C49F"
                   strokeWidth={2}
+                  type="monotone"
                 />
                 <Line
-                  type="monotone"
                   dataKey="falhadas"
                   stroke="#FF8042"
                   strokeWidth={2}
+                  type="monotone"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -289,17 +317,19 @@ export default function DashboardPage() {
             <h3 className="text-lg font-semibold">Tipos de Resposta</h3>
           </CardHeader>
           <CardBody>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer height={300} width="100%">
               <PieChart>
                 <Pie
-                  data={responseTypes}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
+                  data={responseTypes}
                   dataKey="value"
+                  fill="#8884d8"
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
+                  labelLine={false}
+                  outerRadius={80}
                 >
                   {responseTypes?.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -317,7 +347,7 @@ export default function DashboardPage() {
             <h3 className="text-lg font-semibold">Performance por Campanha</h3>
           </CardHeader>
           <CardBody>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer height={300} width="100%">
               <BarChart data={campaignMetrics}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
