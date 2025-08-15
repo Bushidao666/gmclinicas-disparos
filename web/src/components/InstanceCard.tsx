@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
@@ -183,10 +184,12 @@ export function InstanceCard({
           {selectedClient && (
             <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg transition-all">
               {selectedClient.photo_url ? (
-                <img
+                <Image
                   alt={selectedClient.name}
-                  className="w-6 h-6 rounded-full object-cover"
+                  className="rounded-full object-cover"
                   src={selectedClient.photo_url}
+                  width={24}
+                  height={24}
                 />
               ) : (
                 <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-medium">

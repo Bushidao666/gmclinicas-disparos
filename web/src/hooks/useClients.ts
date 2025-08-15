@@ -15,29 +15,29 @@ export function useClients(params: { page?: number; pageSize?: number; search?: 
   const { page, pageSize, search = "" } = params;
   const isPaged = typeof pageSize === "number" || search !== "" || (typeof page === "number" && page > 1);
 
-  if (!isPaged) {
-    // Lista simples: mantém compatibilidade com chamadas existentes
-    return useQuery({
-      queryKey: ["clients", "list"],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("clients")
-          .select("id,name,photo_url,email,user_id")
-          .order("name");
-
-        if (error) throw error;
-        return data ?? [];
-      },
-    });
-  }
-
   const currentPage = page ?? 1;
   const currentPageSize = pageSize ?? 20;
   const from = (currentPage - 1) * currentPageSize;
   const to = from + currentPageSize - 1;
 
-  return useQuery({
+  // Chamamos ambas as queries sempre, controlando execução via "enabled" para não violar regras de Hooks.
+  const simpleQuery = useQuery<Database["public"]["Tables"]["clients"]["Row"][]>({
+    queryKey: ["clients", "list"],
+    enabled: !isPaged,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id,name,photo_url,email,user_id")
+        .order("name");
+
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const pagedQuery = useQuery<{ items: Database["public"]["Tables"]["clients"]["Row"][]; total: number}>({
     queryKey: ["clients", currentPage, currentPageSize, search],
+    enabled: isPaged,
     queryFn: async () => {
       let query = supabase
         .from("clients")
@@ -54,4 +54,6 @@ export function useClients(params: { page?: number; pageSize?: number; search?: 
       return { items: data ?? [], total: count ?? 0 };
     },
   });
+
+  return (isPaged ? pagedQuery : simpleQuery) as unknown as ReturnType<typeof useQuery<any>>;
 }

@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import {
   CheckCheck,
   MoreVertical,
@@ -186,11 +187,15 @@ export function WhatsAppPreview({
                         {mediaFile && contentType !== "text" && (
                           <div className="mb-1.5 -mx-2 -mt-1.5">
                             {(contentType === "image" && mediaPreview) ? (
-                              <img 
-                                src={mediaPreview} 
-                                alt="Preview" 
-                                className="w-full h-auto max-h-40 object-cover rounded-t-lg"
-                              />
+                              <div className="w-full h-auto max-h-40 rounded-t-lg overflow-hidden relative">
+                                <Image 
+                                  src={mediaPreview} 
+                                  alt="Preview" 
+                                  fill
+                                  sizes="(max-width: 640px) 100vw, 640px"
+                                  className="object-cover"
+                                />
+                              </div>
                             ) : (contentType === "video" && mediaPreview) ? (
                               <div className="relative">
                                 <video 
