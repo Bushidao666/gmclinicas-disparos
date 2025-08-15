@@ -194,6 +194,7 @@ export const Sidebar = () => {
         isIconOnly
         variant="light"
         className="fixed top-4 left-4 z-50 lg:hidden"
+        aria-label={isMobileOpen ? "Fechar menu" : "Abrir menu"}
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
         {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
@@ -220,6 +221,7 @@ export const Sidebar = () => {
           size="sm"
           variant="flat"
           className="absolute -right-3 top-20 z-10"
+          aria-label={isCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
