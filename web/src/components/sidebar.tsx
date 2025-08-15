@@ -13,6 +13,7 @@ import {
   Calendar,
   Server,
   Webhook,
+  Shield,
   Settings,
   LogOut,
   ChevronLeft,
@@ -25,6 +26,7 @@ import { createSupabaseClient } from "@/lib/supabaseClient";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Logo } from "@/components/icons";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const menuItems = [
   {
@@ -67,6 +69,11 @@ const menuItems = [
     href: "/webhooks",
     icon: Webhook,
   },
+  {
+    label: "Equipe",
+    href: "/team",
+    icon: Shield,
+  },
 ];
 
 export const Sidebar = () => {
@@ -75,6 +82,7 @@ export const Sidebar = () => {
   const supabase = createSupabaseClient();
   const [hasSession, setHasSession] = useState<boolean>(false);
   const { isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen } = useSidebar();
+  const { isAdmin } = useUserRole();
 
   useEffect(() => {
     let isMounted = true;
@@ -119,7 +127,9 @@ export const Sidebar = () => {
 
       {/* Navigation Items */}
       <nav className="flex-1 p-4 space-y-2">
-        {menuItems.map((item) => {
+        {menuItems
+          .filter((i) => (i.href === "/team" ? isAdmin : true))
+          .map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           
