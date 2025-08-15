@@ -338,9 +338,7 @@ export default function DashboardPage() {
   }, [generalMetrics]);
 
   return (
-    <>
-      <main className="p-6 space-y-6">
-      {/* Header com filtros */}
+    <main className="p-6 space-y-6">
       <div className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold">Dashboard de Disparos</h1>
 
@@ -403,7 +401,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Cards de métricas principais */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
@@ -471,9 +468,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Gráficos principais */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Gráfico de área - Evolução temporal */}
         <Card>
           <CardHeader>
             <h3 className="text-lg font-semibold">Evolução de Envios</h3>
@@ -515,7 +510,6 @@ export default function DashboardPage() {
           </CardBody>
         </Card>
 
-        {/* Funil de conversão */}
         <Card>
           <CardHeader>
             <h3 className="text-lg font-semibold">Funil de Conversão</h3>
@@ -542,7 +536,6 @@ export default function DashboardPage() {
           </CardBody>
         </Card>
 
-        {/* Distribuição de Status */}
         <Card>
           <CardHeader>
             <h3 className="text-lg font-semibold">Distribuição de Status</h3>
@@ -572,7 +565,6 @@ export default function DashboardPage() {
           </CardBody>
         </Card>
 
-        {/* Performance por Cliente com Score de Engajamento */}
         <Card>
           <CardHeader>
             <h3 className="text-lg font-semibold">
@@ -626,7 +618,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Tabela de campanhas em tempo real */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -654,8 +645,8 @@ export default function DashboardPage() {
               <TableColumn align="center">CONVERSÃO</TableColumn>
               <TableColumn align="center">ETA</TableColumn>
             </TableHeader>
-            <TableBody items={topCampaigns || []}>
-              {(campaign) => (
+            <TableBody>
+              {(topCampaigns || []).map((campaign) => (
                 <TableRow key={campaign.name}>
                   <TableCell>
                     <div>
@@ -754,6 +745,5 @@ export default function DashboardPage() {
         </CardBody>
       </Card>
       </main>
-    </>
   );
 }
