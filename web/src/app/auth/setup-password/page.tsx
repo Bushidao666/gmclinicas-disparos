@@ -7,8 +7,9 @@ import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Spinner } from "@heroui/spinner";
 import { toast } from "sonner";
-import { createSupabaseClient } from "@/lib/supabaseClient";
 import { Lock, CheckCircle, User } from "lucide-react";
+
+import { createSupabaseClient } from "@/lib/supabaseClient";
 
 export default function SetupPasswordPage() {
   const router = useRouter();

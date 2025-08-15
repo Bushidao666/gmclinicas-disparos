@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FullPageLoader } from "@/components/FullPageLoader";
 
+import { FullPageLoader } from "@/components/FullPageLoader";
 import { useUserRole } from "@/hooks/useUserRole";
 
 interface ProtectedRouteProps {

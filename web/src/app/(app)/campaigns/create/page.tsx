@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { useClients } from "@/hooks/useClients";
 import { useClientInstances } from "@/hooks/useEvoInstances";
 import { createSupabaseClient } from "@/lib/supabaseClient";
+import { WhatsAppPreview } from "@/components/WhatsAppPreview";
 
 type Step = "client" | "instance" | "content" | "schedule" | "review";
 
@@ -187,35 +188,39 @@ export default function CreateCampaignPage() {
   );
 
   return (
-    <main className="p-6 max-w-4xl mx-auto space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">Criar Nova Campanha</h1>
-        <p className="text-gray-600">
-          Configure sua campanha de disparos passo a passo
-        </p>
-      </div>
+    <main className="p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="space-y-2 mb-6">
+          <h1 className="text-2xl font-semibold">Criar Nova Campanha</h1>
+          <p className="text-gray-600">
+            Configure sua campanha de disparos passo a passo
+          </p>
+        </div>
 
-      <Progress className="mb-6" color="primary" size="sm" value={progress} />
+        <Progress className="mb-6" color="primary" size="sm" value={progress} />
 
-      <div className="flex gap-2 mb-6 overflow-x-auto">
-        {steps.map((step, idx) => (
-          <Chip
-            key={step.id}
-            className="cursor-pointer"
-            color={currentStep === step.id ? "primary" : "default"}
-            variant={currentStep === step.id ? "solid" : "flat"}
-            onClick={() => {
-              if (idx <= currentStepIndex) {
-                setCurrentStep(step.id);
-              }
-            }}
-          >
-            {idx + 1}. {step.label}
-          </Chip>
-        ))}
-      </div>
+        <div className="flex gap-2 mb-6 overflow-x-auto">
+          {steps.map((step, idx) => (
+            <Chip
+              key={step.id}
+              className="cursor-pointer"
+              color={currentStep === step.id ? "primary" : "default"}
+              variant={currentStep === step.id ? "solid" : "flat"}
+              onClick={() => {
+                if (idx <= currentStepIndex) {
+                  setCurrentStep(step.id);
+                }
+              }}
+            >
+              {idx + 1}. {step.label}
+            </Chip>
+          ))}
+        </div>
 
-      <Card>
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          {/* Formulário principal */}
+          <div className="xl:col-span-3">
+            <Card>
         <CardHeader>
           <div>
             <h2 className="text-lg font-semibold">
@@ -415,24 +420,6 @@ export default function CreateCampaignPage() {
                   })
                 }
               />
-
-              {campaignData.captionText && (
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <p className="text-sm text-gray-600 mb-2">
-                    Preview da Mensagem:
-                  </p>
-                  <div className="bg-white rounded-lg p-3 border">
-                    {campaignData.mediaFile && (
-                      <div className="mb-2 text-gray-500 text-sm">
-                        📎 {campaignData.mediaFile.name}
-                      </div>
-                    )}
-                    <p className="whitespace-pre-wrap">
-                      {campaignData.captionText}
-                    </p>
-                  </div>
-                </div>
-              )}
             </>
           )}
 
@@ -522,6 +509,22 @@ export default function CreateCampaignPage() {
 
           {currentStep === "review" && (
             <div className="space-y-4">
+              {/* Preview móvel visível apenas em telas pequenas */}
+              <div className="xl:hidden mb-4">
+                <WhatsAppPreview
+                  contentType={campaignData.contentType}
+                  captionText={campaignData.captionText}
+                  mediaFile={campaignData.mediaFile}
+                  clientName={selectedClient?.name}
+                  campaignName={campaignData.name}
+                  instanceName={selectedInstance?.name || selectedInstance?.instance_id}
+                  dailyVolume={campaignData.dailyVolume}
+                  targetCount={campaignData.targetCount}
+                  startDate={campaignData.startDate}
+                  startTime={campaignData.startTime}
+                />
+              </div>
+              
               <div className="border rounded-lg p-4">
                 <h3 className="font-semibold mb-3">Resumo da Campanha</h3>
 
@@ -636,6 +639,27 @@ export default function CreateCampaignPage() {
           </div>
         </CardBody>
       </Card>
+          </div>
+
+          {/* Preview lateral */}
+          <div className="hidden xl:block xl:col-span-2">
+            <div className="sticky top-0">
+              <WhatsAppPreview
+                contentType={campaignData.contentType}
+                captionText={campaignData.captionText}
+                mediaFile={campaignData.mediaFile}
+                clientName={selectedClient?.name}
+                campaignName={campaignData.name}
+                instanceName={selectedInstance?.name || selectedInstance?.instance_id}
+                dailyVolume={campaignData.dailyVolume}
+                targetCount={campaignData.targetCount}
+                startDate={campaignData.startDate}
+                startTime={campaignData.startTime}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

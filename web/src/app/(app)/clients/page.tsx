@@ -12,7 +12,7 @@ import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useClients } from "@/hooks/useClients";

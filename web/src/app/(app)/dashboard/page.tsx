@@ -13,13 +13,10 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { Progress } from "@heroui/progress";
 import { Link } from "@heroui/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import {
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,

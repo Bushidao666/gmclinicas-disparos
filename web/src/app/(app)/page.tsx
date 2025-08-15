@@ -23,7 +23,6 @@ import { format, subDays, startOfDay, endOfDay } from "date-fns";
 
 import { createSupabaseClient } from "@/lib/supabaseClient";
 import { useClients } from "@/hooks/useClients";
-import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 

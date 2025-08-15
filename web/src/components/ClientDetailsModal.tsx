@@ -35,9 +35,7 @@ import {
   Plus,
   Lock,
   Mail,
-  Key,
   Clock,
-  RefreshCw,
 } from "lucide-react";
 
 import { useClientDetails } from "@/hooks/useClientDetails";
