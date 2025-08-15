@@ -63,10 +63,10 @@ export default function ClientCampaigns() {
       if (error) throw error;
 
       // Processar dados para incluir estatísticas
-      const processedData = data?.map(campaign => {
-        const targets = campaign.campaign_targets || [];
-        const sent = targets.filter(t => t.status === "sent").length;
-        const failed = targets.filter(t => t.status === "failed").length;
+      const processedData = data?.map((campaign: any) => {
+        const targets = (campaign.campaign_targets || []) as Array<{ status: string }>; 
+        const sent = targets.filter((t: { status: string }) => t.status === "sent").length;
+        const failed = targets.filter((t: { status: string }) => t.status === "failed").length;
         const total = targets.length;
 
         return {

@@ -94,20 +94,32 @@ export default function CampaignsPage() {
         (metrics || []).map((m) => [m.campaign_id, m])
       );
 
-      const campaignsWithStats = (base || []).map((c) => {
+      const campaignsWithStats: Campaign[] = (base || []).map((c: any): Campaign => {
         const m = metricsById.get(c.id);
         const total = m?.total_targets ?? 0;
         const sent = m?.sent_count ?? 0;
+
+        const clientRel = Array.isArray(c.client) ? c.client[0] : c.client;
+        const instanceRel = Array.isArray(c.instance) ? (c.instance[0] ?? null) : (c.instance ?? null);
+
         return {
-          ...c,
+          id: String(c.id),
+          name: String(c.name),
+          status: c.status as Campaign["status"],
+          start_at: String(c.start_at),
+          daily_volume: Number(c.daily_volume),
+          target_count: c.target_count == null ? null : Number(c.target_count),
+          created_at: String(c.created_at),
+          client: clientRel as { id: string; name: string },
+          instance: instanceRel ? (instanceRel as { id: string; name: string }) : null,
           stats: {
-            total_targets: typeof total === 'number' ? total : Number(total),
-            sent_count: typeof sent === 'number' ? sent : Number(sent),
+            total_targets: typeof total === "number" ? total : Number(total),
+            sent_count: typeof sent === "number" ? sent : Number(sent),
           },
         };
       });
 
-      return campaignsWithStats as Campaign[];
+      return campaignsWithStats;
     },
   });
 

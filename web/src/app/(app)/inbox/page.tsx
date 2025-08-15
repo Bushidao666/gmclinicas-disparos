@@ -101,7 +101,33 @@ export default function InboxPage() {
 
       if (error) throw error;
 
-      return { items: (data as InboundMessage[]) || [], total: count || 0 };
+      const items: InboundMessage[] = (data || []).map((row: any): InboundMessage => {
+        const leadRel = Array.isArray(row.lead) ? row.lead[0] : row.lead;
+        const clientRel = Array.isArray(row.client) ? row.client[0] : row.client;
+        const responsesRel = Array.isArray(row.responses) ? row.responses : [];
+
+        return {
+          id: String(row.id),
+          client_id: String(row.client_id),
+          lead_id: String(row.lead_id),
+          text_content: String(row.text_content ?? ""),
+          received_at: String(row.received_at),
+          lead: {
+            full_name: String(leadRel?.full_name ?? ""),
+            whatsapp_e164: String(leadRel?.whatsapp_e164 ?? ""),
+            is_opted_out: Boolean(leadRel?.is_opted_out ?? false),
+          },
+          client: {
+            name: String(clientRel?.name ?? ""),
+          },
+          responses: responsesRel.map((r: any) => ({
+            type: r?.type === "unsubscribe" || r?.type === "positive" || r?.type === "other" ? r.type : "other",
+            detected_by: String(r?.detected_by ?? ""),
+          })),
+        };
+      });
+
+      return { items, total: count || 0 };
     },
   });
 
