@@ -1,6 +1,7 @@
 "use client";
 import { ReactNode } from "react";
 import clsx from "clsx";
+
 import { useSidebar } from "@/contexts/SidebarContext";
 
 export function MainLayout({ children }: { children: ReactNode }) {

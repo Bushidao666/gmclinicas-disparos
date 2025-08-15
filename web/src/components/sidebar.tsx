@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import NextLink from "next/link";
 import { Button } from "@heroui/button";
-import { Card } from "@heroui/card";
 import clsx from "clsx";
 import {
   LayoutDashboard,
@@ -205,6 +204,12 @@ export const Sidebar = () => {
         <div 
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setIsMobileOpen(false);
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Fechar menu"
         />
       )}
 

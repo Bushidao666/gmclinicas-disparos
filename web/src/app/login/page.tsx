@@ -28,7 +28,23 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
-      router.replace("/");
+      // Buscar o role do usuário para redirecionar corretamente
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile?.role === "client") {
+          router.replace("/client-dashboard");
+        } else {
+          router.replace("/dashboard");
+        }
+      } else {
+        router.replace("/dashboard");
+      }
     }
   }
 

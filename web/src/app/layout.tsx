@@ -1,13 +1,11 @@
 import "@/styles/globals.css";
 import { Metadata, Viewport } from "next";
 import clsx from "clsx";
+import { Toaster } from "sonner";
 
 import { Providers } from "./providers";
 
 import { fontSans } from "@/config/fonts";
-import { Sidebar } from "@/components/sidebar";
-import { SidebarProvider } from "@/contexts/SidebarContext";
-import { MainLayout } from "@/components/MainLayout";
 
 export const metadata: Metadata = {
   title: {
@@ -42,12 +40,15 @@ export default function RootLayout({
         )}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <SidebarProvider>
-            <div className="relative flex h-screen">
-              <Sidebar />
-              <MainLayout>{children}</MainLayout>
-            </div>
-          </SidebarProvider>
+          <div className="min-h-screen">
+            {children}
+          </div>
+          <Toaster 
+            position="top-right"
+            expand={true}
+            richColors
+            closeButton
+          />
         </Providers>
       </body>
     </html>

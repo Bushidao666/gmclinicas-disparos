@@ -5,11 +5,16 @@ import { useRouter } from "next/navigation";
 
 import { createSupabaseClient } from "@/lib/supabaseClient";
 import { RealtimeProvider } from "@/providers/RealtimeProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Sidebar } from "@/components/sidebar";
+import { SidebarProvider } from "@/contexts/SidebarContext";
+import { MainLayout } from "@/components/MainLayout";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createSupabaseClient();
   const [checking, setChecking] = useState(true);
+  const { role, loading: roleLoading, isClient } = useUserRole();
 
   useEffect(() => {
     let isMounted = true;
@@ -30,7 +35,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  if (checking) {
+  useEffect(() => {
+    // Proteger rotas admin - redirecionar clientes
+    if (!roleLoading && isClient) {
+      router.replace("/client-dashboard");
+    }
+  }, [role, roleLoading, isClient, router]);
+
+  if (checking || roleLoading) {
     return (
       <div className="min-h-screen grid place-items-center">
         <div className="text-default-600">Verificando sessão...</div>
@@ -38,9 +50,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Não mostrar nada para clientes (eles serão redirecionados)
+  if (isClient) {
+    return null;
+  }
+
   return (
     <RealtimeProvider>
-      <div className="min-h-screen">{children}</div>
+      <SidebarProvider>
+        <div className="relative flex h-screen">
+          <Sidebar />
+          <MainLayout>{children}</MainLayout>
+        </div>
+      </SidebarProvider>
     </RealtimeProvider>
   );
 }

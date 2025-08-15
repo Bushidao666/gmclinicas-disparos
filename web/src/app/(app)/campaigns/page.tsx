@@ -1,192 +1,251 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
-import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
+import { useRouter } from "next/navigation";
 import { Button } from "@heroui/button";
+import { Card, CardBody } from "@heroui/card";
+import { Chip } from "@heroui/chip";
+import { Spinner } from "@heroui/spinner";
+import { 
+  Table, 
+  TableHeader, 
+  TableColumn, 
+  TableBody, 
+  TableRow, 
+  TableCell 
+} from "@heroui/table";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Plus, Play, Pause, X } from "lucide-react";
 
-import { uploadToMediaBucket } from "@/lib/storage";
-import { useEvoInstances } from "@/hooks/useEvoInstances";
-import { useClients } from "@/hooks/useClients";
+import { createSupabaseClient } from "@/lib/supabaseClient";
 
-const schema = z.object({
-  client_id: z.string().min(1, "Selecione um cliente"),
-  name: z.string().min(2),
-  start_at: z.string().min(10, "Informe uma data ISO"),
-  daily_volume: z.number().min(1),
-  content_type: z.enum(["text", "image", "video", "audio", "document"]),
-  caption_text: z.string().optional().nullable(),
-  evoapi_instance_id: z.string().optional().nullable(),
-});
+interface Campaign {
+  id: string;
+  name: string;
+  status: 'draft' | 'active' | 'paused' | 'completed' | 'canceled';
+  start_at: string;
+  daily_volume: number;
+  target_count: number | null;
+  created_at: string;
+  client: {
+    id: string;
+    name: string;
+  };
+  instance: {
+    id: string;
+    name: string;
+  } | null;
+  stats: {
+    total_targets: number;
+    sent_count: number;
+  };
+}
 
-type FormData = z.infer<typeof schema>;
+const statusColorMap = {
+  draft: "default",
+  active: "success",
+  paused: "warning",
+  completed: "primary",
+  canceled: "danger",
+} as const;
+
+const statusLabelMap = {
+  draft: "Rascunho",
+  active: "Ativa",
+  paused: "Pausada",
+  completed: "Concluída",
+  canceled: "Cancelada",
+};
 
 export default function CampaignsPage() {
-  const { data: clients = [] } = useClients();
-  const [clientId, setClientId] = useState<string | undefined>(undefined);
-  const { data: instances = [] } = useEvoInstances(clientId);
-  const [result, setResult] = useState<any>(null);
+  const router = useRouter();
+  const supabase = createSupabaseClient();
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      daily_volume: 50,
-      content_type: "text",
+  const { data: campaigns, isLoading, refetch } = useQuery({
+    queryKey: ["campaigns"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select(`
+          id,
+          name,
+          status,
+          start_at,
+          daily_volume,
+          target_count,
+          created_at,
+          client:clients!campaigns_client_id_fkey(id, name),
+          instance:evoapi_instances!campaigns_evoapi_instance_id_fkey(id, name)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Buscar estatísticas para cada campanha
+      const campaignsWithStats = await Promise.all(
+        (data || []).map(async (campaign) => {
+          const { data: targets } = await supabase
+            .from("campaign_targets")
+            .select("id, status")
+            .eq("campaign_id", campaign.id);
+
+          const stats = {
+            total_targets: targets?.length || 0,
+            sent_count: targets?.filter(t => t.status === "sent").length || 0,
+          };
+
+          return { ...campaign, stats };
+        })
+      );
+
+      return campaignsWithStats as Campaign[];
     },
   });
 
-  const onSubmit = async (values: FormData) => {
-    // Se houver arquivo selecionado e tipo for mídia, realizar upload e trocar media_path
-    if (
-      values.content_type !== "text" &&
-      (values as any).media_file instanceof File
-    ) {
-      const file = (values as any).media_file as File;
-      const { path } = await uploadToMediaBucket(file);
+  const getProgress = (campaign: Campaign) => {
+    if (campaign.stats.total_targets === 0) return 0;
+    return Math.round((campaign.stats.sent_count / campaign.stats.total_targets) * 100);
+  };
 
-      (values as any).media_path = path; // salvar apenas path
+  const renderCell = (campaign: Campaign, columnKey: React.Key) => {
+    switch (columnKey) {
+      case "name":
+        return (
+          <div>
+            <p className="font-medium">{campaign.name}</p>
+            <p className="text-xs text-gray-500">{campaign.client.name}</p>
+          </div>
+        );
+      
+      case "status":
+        return (
+          <Chip
+            className="capitalize"
+            color={statusColorMap[campaign.status]}
+            size="sm"
+            variant="flat"
+          >
+            {statusLabelMap[campaign.status]}
+          </Chip>
+        );
+      
+      case "progress":
+        const progress = getProgress(campaign);
+        return (
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <div className="flex justify-between text-xs mb-1">
+                <span>{campaign.stats.sent_count}</span>
+                <span>{campaign.stats.total_targets}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-primary rounded-full h-2 transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+            <span className="text-xs font-medium">{progress}%</span>
+          </div>
+        );
+      
+      case "schedule":
+        return (
+          <div>
+            <p className="text-sm">
+              {format(new Date(campaign.start_at), "dd/MM/yyyy", { locale: ptBR })}
+            </p>
+            <p className="text-xs text-gray-500">
+              {campaign.daily_volume} msgs/dia
+            </p>
+          </div>
+        );
+      
+      case "actions":
+        return (
+          <div className="flex gap-1">
+            {campaign.status === "active" && (
+              <Button isIconOnly size="sm" variant="flat">
+                <Pause className="w-4 h-4" />
+              </Button>
+            )}
+            {campaign.status === "paused" && (
+              <Button isIconOnly size="sm" variant="flat" color="success">
+                <Play className="w-4 h-4" />
+              </Button>
+            )}
+            {(campaign.status === "active" || campaign.status === "paused") && (
+              <Button isIconOnly size="sm" variant="flat" color="danger">
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        );
+      
+      default:
+        return null;
     }
-
-    const res = await fetch("/api/create-campaign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    const data = await res.json();
-
-    setResult(data);
   };
 
   return (
-    <main className="p-6 grid gap-4 max-w-2xl mx-auto">
+    <main className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Criar Campanha</h1>
-        <Button as="a" color="primary" href="/campaigns/create" variant="flat">
-          Usar Wizard
+        <div>
+          <h1 className="text-2xl font-semibold">Campanhas</h1>
+          <p className="text-gray-600 mt-1">
+            Gerencie suas campanhas de disparos
+          </p>
+        </div>
+        <Button
+          color="primary"
+          startContent={<Plus className="w-4 h-4" />}
+          onPress={() => router.push("/campaigns/create")}
+        >
+          Nova Campanha
         </Button>
       </div>
-      <form
-        className="grid gap-4 bg-content1 p-4 rounded-large"
-        onSubmit={handleSubmit(onSubmit)}
-      >
-        <Select
-          errorMessage={errors.client_id?.message}
-          isInvalid={!!errors.client_id}
-          label="Cliente"
-          selectedKeys={watch("client_id") ? [watch("client_id")] : []}
-          onChange={(e) => {
-            const id = e.target.value;
 
-            setValue("client_id", id);
-            setClientId(id);
-          }}
-          items={clients}
-        >
-          {(client) => (
-            <SelectItem key={client.id} textValue={client.name}>
-              {client.name}
-            </SelectItem>
+      <Card>
+        <CardBody>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <Spinner size="lg" />
+            </div>
+          ) : campaigns && campaigns.length > 0 ? (
+            <Table aria-label="Tabela de campanhas">
+              <TableHeader>
+                <TableColumn key="name">CAMPANHA</TableColumn>
+                <TableColumn key="status">STATUS</TableColumn>
+                <TableColumn key="progress">PROGRESSO</TableColumn>
+                <TableColumn key="schedule">AGENDAMENTO</TableColumn>
+                <TableColumn key="actions">AÇÕES</TableColumn>
+              </TableHeader>
+              <TableBody items={campaigns}>
+                {(campaign) => (
+                  <TableRow key={campaign.id}>
+                    {(columnKey) => (
+                      <TableCell>{renderCell(campaign, columnKey)}</TableCell>
+                    )}
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600 mb-4">
+                Nenhuma campanha encontrada
+              </p>
+              <Button
+                color="primary"
+                onPress={() => router.push("/campaigns/create")}
+              >
+                Criar Primeira Campanha
+              </Button>
+            </div>
           )}
-        </Select>
-
-        <Input
-          label="Nome"
-          {...register("name")}
-          errorMessage={errors.name?.message}
-          isInvalid={!!errors.name}
-        />
-        <Input
-          label="Início (ISO)"
-          placeholder="2025-08-12T13:00:00Z"
-          {...register("start_at")}
-          errorMessage={errors.start_at?.message}
-          isInvalid={!!errors.start_at}
-        />
-        <Input
-          label="Volume diário"
-          type="number"
-          {...register("daily_volume", { valueAsNumber: true })}
-          errorMessage={errors.daily_volume?.message}
-          isInvalid={!!errors.daily_volume}
-        />
-        <Select
-          label="Tipo de conteúdo"
-          selectedKeys={[watch("content_type") ?? "text"]}
-          onChange={(e) =>
-            setValue("content_type", e.target.value as FormData["content_type"])
-          }
-          items={["text", "image", "video", "audio", "document"].map(t => ({ value: t, label: t }))}
-        >
-          {(item) => (
-            <SelectItem key={item.value}>
-              {item.label}
-            </SelectItem>
-          )}
-        </Select>
-        <Input label="Legenda (opcional)" {...register("caption_text")} />
-
-        {/* Upload de mídia quando não for texto */}
-        {watch("content_type") !== "text" && (
-          <Input
-            accept={
-              watch("content_type") === "image"
-                ? "image/*"
-                : watch("content_type") === "video"
-                  ? "video/*"
-                  : watch("content_type") === "audio"
-                    ? "audio/*"
-                    : "*/*"
-            }
-            label="Arquivo de mídia"
-            type="file"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-
-              // RHF não tipa File nativamente no register; usamos setValue via any
-              if (f) (setValue as any)("media_file", f);
-            }}
-          />
-        )}
-
-        <Select
-          label="Instância Evolution (opcional)"
-          selectedKeys={
-            watch("evoapi_instance_id")
-              ? [watch("evoapi_instance_id") as string]
-              : []
-          }
-          onChange={(e) => setValue("evoapi_instance_id", e.target.value)}
-          items={instances}
-        >
-          {(instance) => (
-            <SelectItem
-              key={instance.id}
-              textValue={instance.name ?? instance.instance_id}
-            >
-              {instance.name ?? instance.instance_id}
-            </SelectItem>
-          )}
-        </Select>
-
-        <Button color="primary" isLoading={isSubmitting} type="submit">
-          Criar Campanha
-        </Button>
-      </form>
-
-      {result && (
-        <pre className="bg-content1 p-4 rounded-large text-sm overflow-auto">
-          {JSON.stringify(result, null, 2)}
-        </pre>
-      )}
+        </CardBody>
+      </Card>
     </main>
   );
 }

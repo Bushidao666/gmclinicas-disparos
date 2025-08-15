@@ -15,6 +15,28 @@ export type Database = {
           id: string;
           name: string;
           photo_url: string | null;
+          email: string | null;
+          user_id: string | null;
+          created_at: string;
+        };
+      };
+      user_profiles: {
+        Row: {
+          id: string;
+          email: string;
+          full_name: string | null;
+          role: 'admin' | 'client' | 'collaborator';
+          created_at: string;
+          updated_at: string;
+        };
+      };
+      agency_collaborators: {
+        Row: {
+          id: string;
+          user_id: string;
+          permissions: Json;
+          created_at: string;
+          updated_at: string;
         };
       };
       evoapi_instances: {

@@ -11,6 +11,7 @@
   "dependencies": {
     "@eslint/compat": "^1.3.2",
     "@eslint/eslintrc": "^3.3.1",
+    "@heroui/avatar": "^2.2.20",
     "@heroui/button": "2.2.24",
     "@heroui/card": "^2.2.23",
     "@heroui/chip": "^2.2.20",
@@ -21,12 +22,14 @@
     "@heroui/listbox": "2.3.23",
     "@heroui/modal": "^2.2.21",
     "@heroui/navbar": "2.2.22",
+    "@heroui/pagination": "^2.2.22",
     "@heroui/progress": "^2.2.20",
     "@heroui/select": "^2.4.25",
     "@heroui/snippet": "2.2.25",
     "@heroui/switch": "2.2.22",
     "@heroui/system": "2.4.20",
     "@heroui/table": "^2.2.24",
+    "@heroui/tabs": "^2.2.21",
     "@heroui/theme": "2.4.20",
     "@hookform/resolvers": "^5.2.1",
     "@react-aria/ssr": "3.9.10",
@@ -49,6 +52,7 @@
     "react-dom": "18.3.1",
     "react-hook-form": "^7.62.0",
     "recharts": "^3.1.2",
+    "sonner": "^2.0.7",
     "zod": "^4.0.17"
   },
   "devDependencies": {
