@@ -140,7 +140,10 @@ export default function DashboardPage() {
       };
 
       data?.forEach((response) => {
-        counts[response.type]++;
+        const type = response.type as keyof typeof counts;
+        if (type in counts) {
+          counts[type]++;
+        }
       });
 
       return [
@@ -191,34 +194,36 @@ export default function DashboardPage() {
           <Select
             className="w-32"
             label="Período"
-            value={dateRange}
+            selectedKeys={[dateRange]}
             onChange={(e) => setDateRange(e.target.value)}
+            items={[
+              { key: "7", label: "7 dias" },
+              { key: "15", label: "15 dias" },
+              { key: "30", label: "30 dias" },
+            ]}
           >
-            <SelectItem key="7" value="7">
-              7 dias
-            </SelectItem>
-            <SelectItem key="15" value="15">
-              15 dias
-            </SelectItem>
-            <SelectItem key="30" value="30">
-              30 dias
-            </SelectItem>
+            {(item) => (
+              <SelectItem key={item.key}>
+                {item.label}
+              </SelectItem>
+            )}
           </Select>
           <Select
             className="w-48"
             label="Cliente"
             placeholder="Todos"
-            value={selectedClientId}
+            selectedKeys={selectedClientId ? [selectedClientId] : []}
             onChange={(e) => setSelectedClientId(e.target.value)}
+            items={[
+              { id: "", name: "Todos os clientes" },
+              ...(clients || []),
+            ]}
           >
-            <SelectItem key="" value="">
-              Todos os clientes
-            </SelectItem>
-            {clients?.map((client) => (
-              <SelectItem key={client.id} value={client.id}>
-                {client.name}
+            {(item) => (
+              <SelectItem key={item.id}>
+                {item.name}
               </SelectItem>
-            ))}
+            )}
           </Select>
         </div>
       </div>
@@ -326,7 +331,7 @@ export default function DashboardPage() {
                   dataKey="value"
                   fill="#8884d8"
                   label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
+                    `${name} ${((percent || 0) * 100).toFixed(0)}%`
                   }
                   labelLine={false}
                   outerRadius={80}

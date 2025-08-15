@@ -98,15 +98,16 @@ export default function WebhooksPage() {
           label="Filtrar por cliente"
           selectedKeys={selectedClientId ? [selectedClientId] : []}
           onChange={(e) => setSelectedClientId(e.target.value)}
+          items={[
+            { id: "", name: "Todos os clientes" },
+            ...clients,
+          ]}
         >
-          <SelectItem key="" value="">
-            Todos os clientes
-          </SelectItem>
-          {clients.map((c) => (
-            <SelectItem key={c.id} textValue={c.name} value={c.id}>
-              {c.name}
+          {(item) => (
+            <SelectItem key={item.id} textValue={item.name}>
+              {item.name}
             </SelectItem>
-          ))}
+          )}
         </Select>
       </div>
 

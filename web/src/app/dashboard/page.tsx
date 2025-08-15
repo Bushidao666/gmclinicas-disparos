@@ -375,17 +375,18 @@ export default function DashboardPage() {
             <Select
               id="client-select"
               placeholder="Todos os clientes"
-              value={selectedClientId}
+              selectedKeys={selectedClientId ? [selectedClientId] : []}
               onChange={(e) => setSelectedClientId(e.target.value)}
+              items={[
+                { id: "", name: "Todos os clientes" },
+                ...(clients || []),
+              ]}
             >
-              <SelectItem key="" value="">
-                Todos os clientes
-              </SelectItem>
-              {clients?.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
+              {(item) => (
+                <SelectItem key={item.id}>
+                  {item.name}
                 </SelectItem>
-              ))}
+              )}
             </Select>
           </div>
 
@@ -554,7 +555,7 @@ export default function DashboardPage() {
                   dataKey="value"
                   fill="#8884d8"
                   label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
+                    `${name} ${((percent || 0) * 100).toFixed(0)}%`
                   }
                   labelLine={false}
                   outerRadius={80}
@@ -651,9 +652,9 @@ export default function DashboardPage() {
               <TableColumn align="center">CONVERSÃO</TableColumn>
               <TableColumn align="center">ETA</TableColumn>
             </TableHeader>
-            <TableBody>
-              {topCampaigns?.map((campaign, index) => (
-                <TableRow key={index}>
+            <TableBody items={topCampaigns || []}>
+              {(campaign) => (
+                <TableRow key={campaign.name}>
                   <TableCell>
                     <div>
                       <p className="font-medium">{campaign.name}</p>
