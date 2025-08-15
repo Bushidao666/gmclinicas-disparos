@@ -40,7 +40,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <RealtimeProvider>
-      <div className="min-h-screen bg-neutral-50">{children}</div>
+      <div className="min-h-screen">{children}</div>
     </RealtimeProvider>
   );
 }
