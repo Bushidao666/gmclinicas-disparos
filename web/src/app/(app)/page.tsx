@@ -2,7 +2,7 @@
 
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Select, SelectItem } from "@heroui/select";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   BarChart,
@@ -23,11 +23,13 @@ import { format, subDays, startOfDay, endOfDay } from "date-fns";
 
 import { createSupabaseClient } from "@/lib/supabaseClient";
 import { useClients } from "@/hooks/useClients";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
 export default function DashboardPage() {
   const supabase = createSupabaseClient();
+  const queryClient = useQueryClient();
   const { data: clients } = useClients();
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [dateRange, setDateRange] = useState("7");
@@ -154,6 +156,8 @@ export default function DashboardPage() {
     },
   });
 
+  // Invalidações centralizadas no QueryInvalidationProvider
+
   // Métricas por campanha
   const { data: campaignMetrics } = useQuery({
     queryKey: ["dashboard-campaign-metrics", selectedClientId],
@@ -214,9 +218,12 @@ export default function DashboardPage() {
             placeholder="Todos"
             selectedKeys={selectedClientId ? [selectedClientId] : []}
             onChange={(e) => setSelectedClientId(e.target.value)}
-            items={[
+            items={Array.isArray(clients) ? [
               { id: "", name: "Todos os clientes" },
-              ...(clients || []),
+              ...clients,
+            ] : [
+              { id: "", name: "Todos os clientes" },
+              ...((clients as any)?.items ?? []),
             ]}
           >
             {(item) => (

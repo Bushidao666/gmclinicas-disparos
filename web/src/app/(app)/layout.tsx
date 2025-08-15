@@ -9,6 +9,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Sidebar } from "@/components/sidebar";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { MainLayout } from "@/components/MainLayout";
+import { QueryInvalidationProvider } from "@/providers/QueryInvalidationProvider";
+import { FullPageLoader } from "@/components/FullPageLoader";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -43,11 +45,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [role, roleLoading, isClient, router]);
 
   if (checking || roleLoading) {
-    return (
-      <div className="min-h-screen grid place-items-center">
-        <div className="text-default-600">Verificando sessão...</div>
-      </div>
-    );
+    return <FullPageLoader message="Verificando sessão..." />;
   }
 
   // Não mostrar nada para clientes (eles serão redirecionados)
@@ -57,12 +55,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <RealtimeProvider>
-      <SidebarProvider>
-        <div className="relative flex h-screen">
-          <Sidebar />
-          <MainLayout>{children}</MainLayout>
-        </div>
-      </SidebarProvider>
+      <QueryInvalidationProvider>
+        <SidebarProvider>
+          <div className="relative flex h-screen">
+            <Sidebar />
+            <MainLayout>{children}</MainLayout>
+          </div>
+        </SidebarProvider>
+      </QueryInvalidationProvider>
     </RealtimeProvider>
   );
 }

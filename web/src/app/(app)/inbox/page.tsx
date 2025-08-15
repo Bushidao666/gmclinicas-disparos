@@ -63,21 +63,27 @@ export default function InboxPage() {
     null,
   );
 
-  const { data: messages = [], isLoading } = useQuery({
-    queryKey: ["inbox", selectedClientId, responseFilter],
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+  const { data: messages, isLoading } = useQuery({
+    queryKey: ["inbox", selectedClientId, responseFilter, page],
     queryFn: async () => {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
       let query = supabase
         .from("messages_inbound")
         .select(
           `
-          *,
-          lead:leads(*),
+          id, client_id, lead_id, text_content, received_at,
+          lead:leads(full_name, whatsapp_e164, is_opted_out),
           client:clients(name),
           responses:responses(type, detected_by)
         `,
+          { count: "exact" },
         )
         .order("received_at", { ascending: false })
-        .limit(100);
+        .range(from, to);
 
       if (selectedClientId) {
         query = query.eq("client_id", selectedClientId);
@@ -91,11 +97,11 @@ export default function InboxPage() {
         query = query.is("responses", null);
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) throw error;
 
-      return data as InboundMessage[];
+      return { items: (data as InboundMessage[]) || [], total: count || 0 };
     },
   });
 
@@ -153,7 +159,11 @@ export default function InboxPage() {
     },
   });
 
-  const filteredMessages = messages.filter((msg) => {
+  const items = messages?.items ?? [];
+  const total = messages?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const filteredMessages = items.filter((msg) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
 
@@ -307,6 +317,31 @@ export default function InboxPage() {
           )}
         </CardBody>
       </Card>
+
+      {/* Paginação */}
+      <div className="flex items-center justify-between mt-4 text-sm text-default-500">
+        <div>
+          Página {page} de {totalPages}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="flat"
+            isDisabled={page <= 1}
+            onPress={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Anterior
+          </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            isDisabled={page >= totalPages}
+            onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Próxima
+          </Button>
+        </div>
+      </div>
 
       <Modal isOpen={isOpen} size="2xl" onOpenChange={onOpenChange}>
         <ModalContent>

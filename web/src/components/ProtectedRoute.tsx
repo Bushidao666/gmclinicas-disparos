@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Spinner } from "@heroui/spinner";
+import { FullPageLoader } from "@/components/FullPageLoader";
 
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -34,14 +34,7 @@ export function ProtectedRoute({
   }, [role, loading, allowedRoles, redirectTo, router]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen grid place-items-center">
-        <div className="text-center">
-          <Spinner size="lg" />
-          <p className="mt-4 text-default-600">{loadingMessage}</p>
-        </div>
-      </div>
-    );
+    return <FullPageLoader message={loadingMessage} />;
   }
 
   // Se não tem role ou não está na lista permitida, não renderizar

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
+import { Wifi, WifiOff, Save, Webhook, User, Globe, Calendar } from "lucide-react";
 
 import { createSupabaseClient } from "@/lib/supabaseClient";
 
@@ -121,20 +122,21 @@ export function InstanceCard({
   const selectedClient = clients.find((c) => c.id === selectedClientId);
 
   return (
-    <Card className="w-full max-w-sm hover:shadow-lg transition-shadow">
-      <CardHeader className="flex justify-between items-start pb-2">
+    <Card className="w-full max-w-sm hover:shadow-lg transition-all duration-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+      <CardHeader className="flex justify-between items-start pb-3">
         <div className="flex flex-col gap-1">
-          <h3 className="text-lg font-semibold">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {instance.name || instance.instance_id}
           </h3>
-          <p className="text-xs text-gray-500 font-mono">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
             {instance.instance_id}
           </p>
         </div>
         <Chip
           color={isConnected ? "success" : "warning"}
           size="sm"
-          variant="dot"
+          variant="flat"
+          startContent={isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
         >
           {isConnected ? "Conectada" : "Desconectada"}
         </Chip>
@@ -143,22 +145,28 @@ export function InstanceCard({
       <CardBody className="space-y-4">
         {/* Status da conexão */}
         {instance.last_connected_at && (
-          <div className="text-xs text-gray-500">
-            Última conexão:{" "}
-            {new Date(instance.last_connected_at).toLocaleString("pt-BR")}
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <Calendar className="w-3 h-3" />
+            <span>
+              Última conexão:{" "}
+              {new Date(instance.last_connected_at).toLocaleString("pt-BR")}
+            </span>
           </div>
         )}
 
         {/* Seleção de Cliente */}
         <div className="space-y-2">
-          <label htmlFor={`client-select-${instance.id}`} className="text-sm font-medium">Cliente Vinculado:</label>
+          <label htmlFor={`client-select-${instance.id}`} className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Cliente Vinculado
+          </label>
           <select
             id={`client-select-${instance.id}`}
-            className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors ${
+            className={`w-full px-3 py-2 border rounded-lg text-sm transition-all duration-200 ${
               isDirty
-                ? "border-blue-500 bg-blue-50"
-                : "border-gray-200 hover:border-gray-300"
-            } ${!selectedClientId ? "text-gray-500" : "text-gray-900"}`}
+                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700"
+            } ${!selectedClientId ? "text-gray-500 dark:text-gray-400" : "text-gray-900 dark:text-gray-100"}`}
             disabled={isSaving}
             value={selectedClientId}
             onChange={(e) => setSelectedClientId(e.target.value)}
@@ -173,19 +181,19 @@ export function InstanceCard({
 
           {/* Mostrar cliente selecionado */}
           {selectedClient && (
-            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+            <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg transition-all">
               {selectedClient.photo_url ? (
                 <img
                   alt={selectedClient.name}
-                  className="w-6 h-6 rounded-full"
+                  className="w-6 h-6 rounded-full object-cover"
                   src={selectedClient.photo_url}
                 />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
+                <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-medium">
                   {selectedClient.name[0]}
                 </div>
               )}
-              <span className="text-sm">{selectedClient.name}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{selectedClient.name}</span>
             </div>
           )}
         </div>
@@ -206,15 +214,16 @@ export function InstanceCard({
         {/* Ações */}
         <div className="flex gap-2">
           <Button
-            className="flex-1"
+            className="flex-1 transition-all"
             color="primary"
             isDisabled={!isDirty}
             isLoading={isSaving}
             size="sm"
             variant={isDirty ? "solid" : "flat"}
+            startContent={!isSaving && isDirty && <Save className="w-4 h-4" />}
             onPress={handleSave}
           >
-            {isDirty ? "Salvar Alteração" : "Atualizado"}
+            {isDirty ? "Salvar" : "Atualizado"}
           </Button>
 
           <Button
@@ -222,6 +231,7 @@ export function InstanceCard({
             isLoading={isConfiguringWebhook}
             size="sm"
             variant="flat"
+            startContent={!isConfiguringWebhook && <Webhook className="w-4 h-4" />}
             onPress={handleConfigureWebhook}
           >
             Webhook
@@ -230,9 +240,12 @@ export function InstanceCard({
 
         {/* Base URL */}
         {instance.base_url && (
-          <div className="pt-2 border-t">
-            <p className="text-xs text-gray-500">Base URL:</p>
-            <p className="text-xs font-mono text-gray-700 truncate">
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-1">
+              <Globe className="w-3 h-3 text-gray-400" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">Base URL:</p>
+            </div>
+            <p className="text-xs font-mono text-gray-700 dark:text-gray-300 truncate bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded">
               {instance.base_url}
             </p>
           </div>

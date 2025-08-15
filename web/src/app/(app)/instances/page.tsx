@@ -6,6 +6,7 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Chip } from "@heroui/chip";
 import { Card } from "@heroui/card";
+import { RefreshCw, Search, Server, Wifi, Link2, Filter } from "lucide-react";
 
 import { InstanceCard } from "@/components/InstanceCard";
 import { useClients } from "@/hooks/useClients";
@@ -132,22 +133,22 @@ export default function InstancesPage() {
   }, [instances]);
 
   return (
-    <main className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <main className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               Instâncias Evolution
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Gerencie suas instâncias WhatsApp e vincule aos clientes
             </p>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-3">
               <Chip color="success" size="sm" variant="dot">
-                Realtime Ativo
+                <span className="font-medium">Realtime Ativo</span>
               </Chip>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 Atualizações automáticas em tempo real
               </span>
             </div>
@@ -158,53 +159,72 @@ export default function InstancesPage() {
             color="primary"
             isLoading={syncMutation.isPending}
             size="lg"
+            startContent={!syncMutation.isPending && <RefreshCw className="w-4 h-4" />}
             onPress={() => syncMutation.mutate()}
           >
             {syncMutation.isPending
               ? "Sincronizando..."
-              : "🔄 Sincronizar Instâncias"}
+              : "Sincronizar Instâncias"}
           </Button>
         </div>
 
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <div className="text-2xl font-bold text-blue-700">
-              {stats.total}
+          <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                  {stats.total}
+                </div>
+                <div className="text-sm text-blue-600 dark:text-blue-500">Total de Instâncias</div>
+              </div>
+              <Server className="w-8 h-8 text-blue-500 opacity-50" />
             </div>
-            <div className="text-sm text-blue-600">Total de Instâncias</div>
           </Card>
-          <Card className="p-4 bg-green-50 border-green-200">
-            <div className="text-2xl font-bold text-green-700">
-              {stats.connected}
+          <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                  {stats.connected}
+                </div>
+                <div className="text-sm text-green-600 dark:text-green-500">Conectadas</div>
+              </div>
+              <Wifi className="w-8 h-8 text-green-500 opacity-50" />
             </div>
-            <div className="text-sm text-green-600">Conectadas</div>
           </Card>
-          <Card className="p-4 bg-purple-50 border-purple-200">
-            <div className="text-2xl font-bold text-purple-700">
-              {stats.linked}
+          <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  {stats.linked}
+                </div>
+                <div className="text-sm text-purple-600 dark:text-purple-500">Vinculadas</div>
+              </div>
+              <Link2 className="w-8 h-8 text-purple-500 opacity-50" />
             </div>
-            <div className="text-sm text-purple-600">Vinculadas</div>
           </Card>
         </div>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex flex-col md:flex-row gap-4">
           <Input
             className="flex-1"
-            placeholder="🔍 Buscar por nome, ID ou cliente..."
+            placeholder="Buscar por nome, ID ou cliente..."
             size="lg"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            startContent={<Search className="w-4 h-4 text-gray-400" />}
           />
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <Filter className="w-4 h-4 text-gray-400" />
             <Button
               color={filterStatus === "all" ? "primary" : "default"}
               variant={filterStatus === "all" ? "solid" : "flat"}
               onPress={() => setFilterStatus("all")}
+              className="transition-all"
             >
               Todas
             </Button>
@@ -212,6 +232,7 @@ export default function InstancesPage() {
               color={filterStatus === "connected" ? "success" : "default"}
               variant={filterStatus === "connected" ? "solid" : "flat"}
               onPress={() => setFilterStatus("connected")}
+              className="transition-all"
             >
               Conectadas
             </Button>
@@ -219,6 +240,7 @@ export default function InstancesPage() {
               color={filterStatus === "disconnected" ? "warning" : "default"}
               variant={filterStatus === "disconnected" ? "solid" : "flat"}
               onPress={() => setFilterStatus("disconnected")}
+              className="transition-all"
             >
               Desconectadas
             </Button>
@@ -226,6 +248,7 @@ export default function InstancesPage() {
               color={showOnlyUnlinked ? "danger" : "default"}
               variant={showOnlyUnlinked ? "solid" : "flat"}
               onPress={() => setShowOnlyUnlinked(!showOnlyUnlinked)}
+              className="transition-all"
             >
               Sem Vínculo
             </Button>
@@ -236,16 +259,17 @@ export default function InstancesPage() {
       {/* Grid de Instâncias */}
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">
+          <div className="text-gray-500 dark:text-gray-400 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-            Carregando instâncias...
+            <p className="text-sm">Carregando instâncias...</p>
           </div>
         </div>
       ) : filteredInstances.length === 0 ? (
-        <Card className="p-12 text-center">
-          <div className="text-gray-500">
+        <Card className="p-12 text-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <div className="text-gray-500 dark:text-gray-400">
             {searchTerm || filterStatus !== "all" || showOnlyUnlinked ? (
               <>
+                <Server className="w-12 h-12 mx-auto mb-4 opacity-30" />
                 <p className="text-lg font-semibold mb-2">
                   Nenhuma instância encontrada
                 </p>
@@ -253,6 +277,7 @@ export default function InstancesPage() {
               </>
             ) : (
               <>
+                <Server className="w-12 h-12 mx-auto mb-4 opacity-30" />
                 <p className="text-lg font-semibold mb-2">
                   Sem instâncias cadastradas
                 </p>
@@ -278,7 +303,7 @@ export default function InstancesPage() {
 
       {/* Rodapé com informações */}
       {filteredInstances.length > 0 && (
-        <div className="text-center text-sm text-gray-500">
+        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
           Mostrando {filteredInstances.length} de {instances.length} instâncias
         </div>
       )}

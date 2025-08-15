@@ -16,6 +16,7 @@ import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useClients } from "@/hooks/useClients";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { CreateClientModal } from "@/components/CreateClientModal";
 import { ClientDetailsModal } from "@/components/ClientDetailsModal";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
@@ -30,8 +31,11 @@ interface Client {
 
 export default function ClientsPage() {
   const queryClient = useQueryClient();
-  const { data = [], isLoading } = useClients();
   const [filter, setFilter] = useState("");
+  const debouncedFilter = useDebouncedValue(filter, 400);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+  const { data, isLoading } = useClients({ page, pageSize, search: debouncedFilter });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
@@ -73,11 +77,9 @@ export default function ClientsPage() {
     },
   });
 
-  const rows = useMemo(
-    () =>
-      data.filter((c) => c.name.toLowerCase().includes(filter.toLowerCase())),
-    [data, filter],
-  );
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <main className="p-6 grid gap-4">
@@ -113,7 +115,7 @@ export default function ClientsPage() {
           <TableBody
             emptyContent={isLoading ? "Carregando..." : "Nenhum cliente"}
             isLoading={isLoading}
-            items={rows}
+            items={items}
           >
             {(item) => (
               <TableRow 
@@ -178,6 +180,32 @@ export default function ClientsPage() {
           onClose={() => setSelectedClientId(null)}
         />
       )}
+
+      {/* Paginação */}
+      <div className="flex items-center justify-between mt-4 text-sm text-default-500">
+        <div>
+          Mostrando {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, total)} de {total}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="flat"
+            isDisabled={page <= 1}
+            onPress={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Anterior
+          </Button>
+          <span>Página {page} de {totalPages}</span>
+          <Button
+            size="sm"
+            variant="flat"
+            isDisabled={page >= totalPages}
+            onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Próxima
+          </Button>
+        </div>
+      </div>
     </main>
   );
 }

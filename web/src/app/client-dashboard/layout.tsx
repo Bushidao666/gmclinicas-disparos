@@ -19,7 +19,10 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
 import { useUserRole } from "@/hooks/useUserRole";
+import { FullPageLoader } from "@/components/FullPageLoader";
 import { createSupabaseClient } from "@/lib/supabaseClient";
+import { RealtimeProvider } from "@/providers/RealtimeProvider";
+import { QueryInvalidationProvider } from "@/providers/QueryInvalidationProvider";
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -65,11 +68,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   };
 
   if (checking || roleLoading) {
-    return (
-      <div className="min-h-screen grid place-items-center">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <FullPageLoader message="Verificando sessão..." />;
   }
 
   if (!isClient) {
@@ -84,6 +83,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   ];
 
   return (
+    <RealtimeProvider>
+      <QueryInvalidationProvider>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -197,5 +198,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
         </main>
       </div>
     </div>
+      </QueryInvalidationProvider>
+    </RealtimeProvider>
   );
 }

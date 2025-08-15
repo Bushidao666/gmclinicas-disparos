@@ -13,12 +13,13 @@ import {
   TableRow, 
   TableCell 
 } from "@heroui/table";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Plus, Play, Pause, X } from "lucide-react";
 
 import { createSupabaseClient } from "@/lib/supabaseClient";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 interface Campaign {
   id: string;
@@ -61,11 +62,13 @@ const statusLabelMap = {
 export default function CampaignsPage() {
   const router = useRouter();
   const supabase = createSupabaseClient();
+  const queryClient = useQueryClient();
 
   const { data: campaigns, isLoading, refetch } = useQuery({
     queryKey: ["campaigns"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Buscar campanhas
+      const { data: base, error } = await supabase
         .from("campaigns")
         .select(`
           id,
@@ -82,25 +85,42 @@ export default function CampaignsPage() {
 
       if (error) throw error;
 
-      // Buscar estatísticas para cada campanha
-      const campaignsWithStats = await Promise.all(
-        (data || []).map(async (campaign) => {
-          const { data: targets } = await supabase
-            .from("campaign_targets")
-            .select("id, status")
-            .eq("campaign_id", campaign.id);
+      // Buscar métricas agregadas por campanha via view (evita N+1)
+      const { data: metrics } = await supabase
+        .from("v_campaign_metrics")
+        .select("campaign_id, total_targets, sent_count");
 
-          const stats = {
-            total_targets: targets?.length || 0,
-            sent_count: targets?.filter(t => t.status === "sent").length || 0,
-          };
-
-          return { ...campaign, stats };
-        })
+      const metricsById = new Map(
+        (metrics || []).map((m) => [m.campaign_id, m])
       );
+
+      const campaignsWithStats = (base || []).map((c) => {
+        const m = metricsById.get(c.id);
+        const total = m?.total_targets ?? 0;
+        const sent = m?.sent_count ?? 0;
+        return {
+          ...c,
+          stats: {
+            total_targets: typeof total === 'number' ? total : Number(total),
+            sent_count: typeof sent === 'number' ? sent : Number(sent),
+          },
+        };
+      });
 
       return campaignsWithStats as Campaign[];
     },
+  });
+
+  // Realtime: invalidar ao mudar campanhas/targets (progresso)
+  useRealtimeSubscription({
+    channel: "campaigns-realtime",
+    table: "campaigns",
+    onChange: () => queryClient.invalidateQueries({ queryKey: ["campaigns"] }),
+  });
+  useRealtimeSubscription({
+    channel: "campaign-targets-realtime",
+    table: "campaign_targets",
+    onChange: () => queryClient.invalidateQueries({ queryKey: ["campaigns"] }),
   });
 
   const getProgress = (campaign: Campaign) => {

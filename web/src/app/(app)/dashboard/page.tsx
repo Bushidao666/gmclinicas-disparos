@@ -15,7 +15,7 @@ import {
 } from "@heroui/table";
 import { Progress } from "@heroui/progress";
 import { Link } from "@heroui/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import {
   BarChart,
@@ -39,6 +39,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 import { createSupabaseClient } from "@/lib/supabaseClient";
 import { useClients } from "@/hooks/useClients";
+// Invalidações de realtime são centralizadas no QueryInvalidationProvider
 
 const COLORS = [
   "#0088FE",
@@ -51,6 +52,7 @@ const COLORS = [
 
 export default function DashboardPage() {
   const supabase = createSupabaseClient();
+  const queryClient = useQueryClient();
   const { data: clients } = useClients();
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
@@ -58,7 +60,7 @@ export default function DashboardPage() {
     new Date(),
   ]);
   const [startDate, endDate] = dateRange;
-  const [refreshInterval] = useState(30000); // 30 segundos
+  const [refreshInterval] = useState(0); // desativado - realtime cobre
 
   // Métricas gerais usando as novas views
   const { data: generalMetrics } = useQuery({
@@ -177,7 +179,7 @@ export default function DashboardPage() {
             : "0",
       };
     },
-    refetchInterval: refreshInterval,
+    refetchInterval: refreshInterval || undefined,
   });
 
   // Dados para gráfico usando a nova view
@@ -285,6 +287,8 @@ export default function DashboardPage() {
     },
   });
 
+  // Realtime: invalidado via QueryInvalidationProvider
+
   // Leads recentes
   const { data: recentLeads } = useQuery({
     queryKey: ["dashboard-recent-leads", selectedClientId],
@@ -338,9 +342,12 @@ export default function DashboardPage() {
             placeholder="Todos"
             selectedKeys={selectedClientId ? [selectedClientId] : []}
             onChange={(e) => setSelectedClientId(e.target.value)}
-            items={[
+            items={Array.isArray(clients) ? [
               { id: "", name: "Todos os clientes" },
-              ...(clients || []),
+              ...clients,
+            ] : [
+              { id: "", name: "Todos os clientes" },
+              ...((clients as any)?.items ?? []),
             ]}
           >
             {(item) => (
