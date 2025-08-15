@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Select, SelectItem } from "@heroui/select";
 import { Button } from "@heroui/button";
@@ -337,7 +338,8 @@ export default function DashboardPage() {
   }, [generalMetrics]);
 
   return (
-    <main className="p-6 space-y-6">
+    <>
+      <main className="p-6 space-y-6">
       {/* Header com filtros */}
       <div className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold">Dashboard de Disparos</h1>
@@ -751,6 +753,7 @@ export default function DashboardPage() {
           </Table>
         </CardBody>
       </Card>
-    </main>
+      </main>
+    </>
   );
 }
