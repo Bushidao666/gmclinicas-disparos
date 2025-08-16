@@ -73,7 +73,7 @@ export default function ClientReports() {
 
       let query = supabase
         .from("messages_outbound")
-        .select("id, status, sent_at, campaign_id")
+        .select("id, status, sent_at, created_at, campaign_id")
         .eq("client_id", clientId)
         .gte("sent_at", dateRange.start.toISOString())
         .lte("sent_at", dateRange.end.toISOString());
@@ -262,15 +262,13 @@ export default function ClientReports() {
                 placeholder="Todas as campanhas"
                 selectedKeys={[selectedCampaign]}
                 onChange={(e) => setSelectedCampaign(e.target.value)}
+                items={[{ id: "all", name: "Todas as campanhas" }, ...((campaigns as any) || [])]}
               >
-                <SelectItem key="all" value="all">
-                  Todas as campanhas
-                </SelectItem>
-                {campaigns?.map((campaign) => (
-                  <SelectItem key={campaign.id} value={campaign.id}>
-                    {campaign.name}
+                {(item: any) => (
+                  <SelectItem key={item.id}>
+                    {item.name}
                   </SelectItem>
-                ))}
+                )}
               </Select>
             </div>
           </div>
@@ -391,7 +389,7 @@ export default function ClientReports() {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          label={(props: { name?: string; percent?: number }) => `${props.name ?? ""} ${(((props.percent ?? 0) * 100).toFixed(0))}%`}
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"

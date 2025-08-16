@@ -142,22 +142,22 @@ export default function ClientCampaigns() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 startContent={<Filter className="w-4 h-4 text-muted-foreground" />}
               >
-                <SelectItem key="all" value="all">
+                <SelectItem key="all">
                   Todos os status
                 </SelectItem>
-                <SelectItem key="active" value="active">
+                <SelectItem key="active">
                   Ativas
                 </SelectItem>
-                <SelectItem key="paused" value="paused">
+                <SelectItem key="paused">
                   Pausadas
                 </SelectItem>
-                <SelectItem key="completed" value="completed">
+                <SelectItem key="completed">
                   Concluídas
                 </SelectItem>
-                <SelectItem key="draft" value="draft">
+                <SelectItem key="draft">
                   Rascunho
                 </SelectItem>
-                <SelectItem key="canceled" value="canceled">
+                <SelectItem key="canceled">
                   Canceladas
                 </SelectItem>
               </Select>
