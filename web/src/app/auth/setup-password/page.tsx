@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
@@ -13,7 +13,6 @@ import { createSupabaseClient } from "@/lib/supabaseClient";
 
 export default function SetupPasswordPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createSupabaseClient();
   
   const [loading, setLoading] = useState(false);

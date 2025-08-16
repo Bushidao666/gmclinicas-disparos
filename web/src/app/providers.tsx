@@ -32,7 +32,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
             gcTime: 5 * 60 * 1000,
             refetchOnWindowFocus: false,
             refetchOnReconnect: true,
-            keepPreviousData: true,
+            placeholderData: (previousData) => previousData,
             retry: 1,
           },
           mutations: {
