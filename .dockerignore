@@ -1,0 +1,10 @@
+.git
+node_modules
+web/node_modules
+.next
+web/.next
+Dockerfile*
+**/.DS_Store
+**/Thumbs.db
+informacoes importantes
+image.png
