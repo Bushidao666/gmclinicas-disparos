@@ -16,7 +16,7 @@ import { useClients } from "@/hooks/useClients";
 import { useClientInstances } from "@/hooks/useEvoInstances";
 import { createSupabaseClient } from "@/lib/supabaseClient";
 import { WhatsAppPreview } from "@/components/WhatsAppPreview";
-import { uploadToMediaBucket } from "@/lib/storage";
+import { uploadMediaSmart } from "@/lib/storage";
 
 type Step = "client" | "instance" | "content" | "schedule" | "review";
 
@@ -103,7 +103,7 @@ export default function CreateCampaignPage() {
             "Arquivo de mídia maior que 500MB. Comprima o arquivo ou selecione um menor.",
           );
         }
-        const { path } = await uploadToMediaBucket(campaignData.mediaFile);
+        const { path } = await uploadMediaSmart(campaignData.mediaFile);
         mediaPath = path;
       }
 
