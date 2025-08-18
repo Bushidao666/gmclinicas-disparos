@@ -145,7 +145,9 @@ export default function TeamPage() {
   if (roleLoading) return <FullPageLoader message="Verificando permissões..." />;
   if (!isAdmin) return <main className="p-6">Acesso restrito aos administradores.</main>;
 
-  const canInvite = email.length > 3 && /@/.test(email);
+  const normalizedEmail = email.trim().toLowerCase();
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+  const canInvite = emailValid;
 
   return (
     <main className="p-6 space-y-6">
@@ -164,6 +166,7 @@ export default function TeamPage() {
               placeholder="usuario@empresa.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              type="email"
             />
             <Select label="Função" selectedKeys={[role]} onChange={(e) => setRole(e.target.value as Role)}>
               <SelectItem key="collaborator">Colaborador</SelectItem>

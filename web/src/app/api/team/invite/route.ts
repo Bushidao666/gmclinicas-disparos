@@ -12,8 +12,14 @@ export async function POST(req: Request) {
       permissions?: { manage_clients?: boolean; manage_campaigns?: boolean; view_all_metrics?: boolean };
     };
 
-    if (!email || !role) {
+    const normalizedEmail = (email ?? "").trim().toLowerCase();
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+
+    if (!normalizedEmail || !role) {
       return NextResponse.json({ error: "Email e role são obrigatórios" }, { status: 400 });
+    }
+    if (!emailValid) {
+      return NextResponse.json({ error: "E-mail inválido" }, { status: 400 });
     }
 
     // Verificar se quem chama é admin (via sessão)
@@ -56,14 +62,14 @@ export async function POST(req: Request) {
       : undefined;
 
     const { data: authRes, error: authError } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password: Math.random().toString(36).slice(-12), // senha temporária aleatória
       options: {
         emailRedirectTo: redirectUrl,
         data: {
           role: role,
           invited_by_admin: true,
-          full_name: email.split('@')[0] // nome padrão baseado no email
+          full_name: normalizedEmail.split('@')[0] // nome padrão baseado no email
         }
       }
     });
