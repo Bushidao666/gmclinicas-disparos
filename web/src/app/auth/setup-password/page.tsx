@@ -25,6 +25,24 @@ export default function SetupPasswordPage() {
   useEffect(() => {
     async function checkSession() {
       try {
+        // Trocar "code" por sessão, se presente na URL (fluxo redirect do Supabase)
+        try {
+          const currentUrl = new URL(window.location.href);
+          const codeFromQuery = currentUrl.searchParams.get("code");
+          const codeFromHash = new URLSearchParams(
+            (window.location.hash || "").replace(/^#/, "")
+          ).get("code");
+          const code = codeFromQuery || codeFromHash;
+          if (code) {
+            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession({ code });
+            if (exchangeError) {
+              console.error("Falha ao trocar code por sessão:", exchangeError);
+            }
+          }
+        } catch (e) {
+          console.warn("Falha ao processar code na URL:", e);
+        }
+
         // Verificar se o usuário está autenticado (veio do magic link)
         const { data: { user }, error } = await supabase.auth.getUser();
         
