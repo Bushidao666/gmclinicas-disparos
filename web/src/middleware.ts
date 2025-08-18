@@ -94,8 +94,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  // Permitir acesso às rotas de autenticação sem login
+  const isAuthPath = request.nextUrl.pathname.startsWith("/auth/");
+  
   // Se o usuário não estiver logado e tentar acessar rotas protegidas
-  if (!session && (isAdminPath || isClientPath)) {
+  if (!session && (isAdminPath || isClientPath) && !isAuthPath) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -121,7 +124,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files
+     * - auth routes (handled separately)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

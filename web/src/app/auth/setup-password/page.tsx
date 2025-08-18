@@ -37,12 +37,21 @@ export default function SetupPasswordPage() {
         // Verificar se é a primeira vez configurando senha
         if (user.user_metadata?.password_set) {
           toast.info("Você já configurou sua senha");
-          router.replace("/client-dashboard");
+          
+          // Redirecionar baseado no role
+          const userRole = user.user_metadata?.role;
+          if (userRole === 'client') {
+            router.replace("/client-dashboard");
+          } else if (userRole === 'admin' || userRole === 'collaborator') {
+            router.replace("/dashboard");
+          } else {
+            router.replace("/dashboard");
+          }
           return;
         }
 
         setUserEmail(user.email || "");
-        setUserName(user.user_metadata?.full_name || user.user_metadata?.client_name || "");
+        setUserName(user.user_metadata?.full_name || user.user_metadata?.client_name || user.email?.split('@')[0] || "");
         setVerifying(false);
       } catch (error) {
         console.error("Erro ao verificar sessão:", error);
@@ -89,29 +98,37 @@ export default function SetupPasswordPage() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Criar ou atualizar perfil
+        const userRole = user.user_metadata?.role || 'client';
+        
+        // Criar ou atualizar perfil (o trigger handle_new_user já deve ter criado)
         const { error: profileError } = await supabase
           .from("user_profiles")
           .upsert({
             id: user.id,
             email: user.email,
             full_name: userName || user.user_metadata?.full_name || user.user_metadata?.client_name,
-            role: 'client'
+            role: userRole
           });
 
         if (profileError) {
           console.error("Erro ao criar perfil:", profileError);
         }
+
+        toast.success("Senha configurada com sucesso!", {
+          description: "Você será redirecionado para o dashboard"
+        });
+
+        // Redirecionar baseado no role
+        setTimeout(() => {
+          if (userRole === 'client') {
+            router.replace("/client-dashboard");
+          } else if (userRole === 'admin' || userRole === 'collaborator') {
+            router.replace("/dashboard");
+          } else {
+            router.replace("/dashboard");
+          }
+        }, 2000);
       }
-
-      toast.success("Senha configurada com sucesso!", {
-        description: "Você será redirecionado para o dashboard"
-      });
-
-      // Aguardar um pouco e redirecionar
-      setTimeout(() => {
-        router.replace("/client-dashboard");
-      }, 2000);
 
     } catch (error: any) {
       console.error("Erro inesperado:", error);

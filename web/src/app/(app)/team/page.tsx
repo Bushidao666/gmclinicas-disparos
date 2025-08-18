@@ -11,6 +11,7 @@ import { Switch } from "@heroui/switch";
 
 import { useUserRole } from "@/hooks/useUserRole";
 import { FullPageLoader } from "@/components/FullPageLoader";
+import { toast } from "sonner";
 
 type Role = "admin" | "collaborator";
 
@@ -26,9 +27,17 @@ interface TeamMember {
   } | null;
 }
 
+interface PendingInvite {
+  id: string;
+  email: string;
+  invited_at: string;
+  role: Role | null;
+}
+
 export default function TeamPage() {
   const queryClient = useQueryClient();
-  const { isAdmin, loading: roleLoading } = useUserRole();
+  const { isAdmin, loading: roleLoading, profile } = useUserRole();
+  const currentUserId = profile?.id;
 
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("collaborator");
@@ -43,6 +52,15 @@ export default function TeamPage() {
     queryFn: async (): Promise<TeamMember[]> => {
       const res = await fetch("/api/team/list", { cache: "no-store" });
       if (!res.ok) throw new Error("Falha ao carregar equipe");
+      return res.json();
+    },
+  });
+
+  const { data: pending = [], isLoading: isLoadingPending } = useQuery({
+    queryKey: ["team-pending"],
+    queryFn: async (): Promise<PendingInvite[]> => {
+      const res = await fetch("/api/team/pending", { cache: "no-store" });
+      if (!res.ok) throw new Error("Falha ao carregar convites pendentes");
       return res.json();
     },
   });
@@ -63,11 +81,17 @@ export default function TeamPage() {
     onSuccess: () => {
       setEmail("");
       queryClient.invalidateQueries({ queryKey: ["team"] });
+      queryClient.invalidateQueries({ queryKey: ["team-pending"] });
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async (payload: { userId: string; role?: Role; permissions?: TeamMember["permissions"] }) => {
+      // Proteção no frontend: impedir alteração do próprio usuário
+      if (payload.userId === currentUserId && payload.role) {
+        throw new Error("Você não pode alterar seu próprio role");
+      }
+      
       const res = await fetch("/api/team/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,7 +103,36 @@ export default function TeamPage() {
       }
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["team"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["team"] });
+      toast.success("Membro atualizado com sucesso");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erro ao atualizar membro");
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await fetch("/api/team/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error || "Falha ao remover membro");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["team"] });
+      queryClient.invalidateQueries({ queryKey: ["team-pending"] });
+      toast.success("Membro removido com sucesso");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erro ao remover membro");
+    },
   });
 
   useEffect(() => {
@@ -184,9 +237,13 @@ export default function TeamPage() {
                           aria-label="Função"
                           selectedKeys={[member.role]}
                           size="sm"
-                          onChange={(e) =>
-                            updateMutation.mutate({ userId: member.id, role: e.target.value as Role })
-                          }
+                          isDisabled={member.id === currentUserId} // Não pode alterar próprio role
+                          onSelectionChange={(keys) => {
+                            const newRole = Array.from(keys)[0] as Role;
+                            if (newRole !== member.role) {
+                              updateMutation.mutate({ userId: member.id, role: newRole });
+                            }
+                          }}
                         >
                           <SelectItem key="collaborator">Colaborador</SelectItem>
                           <SelectItem key="admin">Administrador</SelectItem>
@@ -228,14 +285,75 @@ export default function TeamPage() {
                         )}
                       </td>
                       <td className="py-2">
-                        <Button
-                          size="sm"
-                          variant="flat"
-                          color="danger"
-                          onPress={() => updateMutation.mutate({ userId: member.id, role: "collaborator", permissions: { manage_clients: false, manage_campaigns: false, view_all_metrics: false } })}
-                        >
-                          Revogar Acessos
-                        </Button>
+                        {member.id === currentUserId ? (
+                          <Chip size="sm" color="primary" variant="flat">
+                            Você
+                          </Chip>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="flat"
+                              color="warning"
+                              onPress={() => updateMutation.mutate({ userId: member.id, role: "collaborator", permissions: { manage_clients: false, manage_campaigns: false, view_all_metrics: false } })}
+                            >
+                              Revogar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="flat"
+                              color="danger"
+                              onPress={() => {
+                                if (confirm(`Tem certeza que deseja remover ${member.email} do sistema? Esta ação não pode ser desfeita.`)) {
+                                  removeMutation.mutate(member.id);
+                                }
+                              }}
+                            >
+                              Remover
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold">Convites Pendentes</h2>
+          <p className="text-sm text-default-500">
+            Usuários convidados que ainda não confirmaram o email. Eles receberam um email de confirmação para definir senha.
+          </p>
+        </CardHeader>
+        <CardBody>
+          {isLoadingPending ? (
+            <div className="py-8 text-center text-default-500">Carregando convites...</div>
+          ) : (pending || []).length === 0 ? (
+            <div className="py-8 text-center text-default-500">Nenhum convite pendente</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-default-500 border-b">
+                    <th className="py-2">Email</th>
+                    <th className="py-2">Função</th>
+                    <th className="py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pending!.map((inv) => (
+                    <tr key={inv.id} className="border-b last:border-b-0">
+                      <td className="py-2">{inv.email}</td>
+                      <td className="py-2">{inv.role || "—"}</td>
+                      <td className="py-2">
+                        <Chip size="sm" color="warning" variant="flat">
+                          Aguardando confirmação
+                        </Chip>
                       </td>
                     </tr>
                   ))}

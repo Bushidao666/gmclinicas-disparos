@@ -39,12 +39,12 @@ import { useClients } from "@/hooks/useClients";
 // Invalidações de realtime são centralizadas no QueryInvalidationProvider
 
 const COLORS = [
-  "#0088FE",
-  "#00C49F",
-  "#FFBB28",
-  "#FF8042",
-  "#8884D8",
-  "#82CA9D",
+  "#1B4D95", // Yale Blue - Cor primária
+  "#2675d9", // Yale Blue Light
+  "#424141", // Arsenic
+  "#00b96f", // Success
+  "#ffb800", // Warning
+  "#ff4d4d", // Danger Light
 ];
 
 export default function DashboardPage() {
@@ -308,131 +308,238 @@ export default function DashboardPage() {
   // Métricas derivadas
   const pieData = useMemo(() => {
     const data = [
-      { name: "Enviadas", value: generalMetrics?.messagesSent || 0, color: "#00C49F" },
-      { name: "Falhadas", value: generalMetrics?.messagesFailed || 0, color: "#FF8042" },
-      { name: "Na fila", value: generalMetrics?.messagesQueued || 0, color: "#8884D8" },
+      { name: "Enviadas", value: generalMetrics?.messagesSent || 0, color: "#1B4D95" },
+      { name: "Falhadas", value: generalMetrics?.messagesFailed || 0, color: "#ff4d4d" },
+      { name: "Na fila", value: generalMetrics?.messagesQueued || 0, color: "#424141" },
     ];
     return data.filter((d) => d.value > 0);
   }, [generalMetrics]);
 
   return (
-    <main className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <div className="flex gap-4 items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-default-500">Período:</span>
-            <DatePicker
-              className="px-3 py-2 rounded-medium bg-content1 text-foreground text-sm border border-default-200"
-              dateFormat="dd/MM/yyyy"
-              locale={ptBR}
-              selectsRange
-              startDate={startDate}
-              endDate={endDate}
-              onChange={(update: [Date | null, Date | null]) => setDateRange(update)}
-              isClearable
-            />
+    <main className="min-h-screen bg-gradient-to-br from-primary-50/20 via-background to-primary-100/10 dark:from-primary-900/10 dark:via-background dark:to-primary-800/5 p-6">
+      <div className="max-w-7xl mx-auto space-y-6 animate-fadeIn">
+        {/* Header com Glass Effect */}
+        <div className="glass-subtle rounded-2xl p-6 backdrop-blur-xl border border-white/20 dark:border-white/10">
+          <div className="flex justify-between items-center">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-600 bg-clip-text text-transparent">
+                Dashboard
+              </h1>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-success rounded-full animate-pulse shadow-lg shadow-success/50"></div>
+                  <span className="text-sm text-arsenic-400 dark:text-arsenic-300">Atualização em tempo real</span>
+                </div>
+                <span className="text-xs text-arsenic-300 dark:text-arsenic-400">|  Visão geral do sistema</span>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="glass-input rounded-xl px-4 py-2 backdrop-blur-md">
+                <label className="text-xs text-arsenic-400 dark:text-arsenic-300 block mb-1 font-medium">Período</label>
+                <DatePicker
+                  className="bg-transparent text-foreground text-sm outline-none w-full"
+                  dateFormat="dd/MM/yyyy"
+                  locale={ptBR}
+                  selectsRange
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChange={(update: [Date | null, Date | null]) => setDateRange(update)}
+                  isClearable
+                  placeholderText="Selecione o período"
+                />
+              </div>
+              <div className="glass-input rounded-xl px-4 py-2 backdrop-blur-md min-w-[200px]">
+                <label className="text-xs text-arsenic-400 dark:text-arsenic-300 block mb-1 font-medium">Cliente</label>
+                <Select
+                  className="w-full"
+                  placeholder="Todos os clientes"
+                  selectedKeys={selectedClientId ? [selectedClientId] : []}
+                  onChange={(e) => setSelectedClientId(e.target.value)}
+                  classNames={{
+                    trigger: "bg-transparent border-0 data-[hover=true]:bg-white/10",
+                    value: "text-foreground",
+                    popoverContent: "glass-card",
+                  }}
+                  items={Array.isArray(clients) ? [
+                    { id: "", name: "Todos os clientes" },
+                    ...clients,
+                  ] : [
+                    { id: "", name: "Todos os clientes" },
+                    ...((clients as any)?.items ?? []),
+                  ]}
+                >
+                  {(item) => (
+                    <SelectItem key={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  )}
+                </Select>
+              </div>
+            </div>
           </div>
-          <Select
-            className="w-48"
-            label="Cliente"
-            placeholder="Todos"
-            selectedKeys={selectedClientId ? [selectedClientId] : []}
-            onChange={(e) => setSelectedClientId(e.target.value)}
-            items={Array.isArray(clients) ? [
-              { id: "", name: "Todos os clientes" },
-              ...clients,
-            ] : [
-              { id: "", name: "Todos os clientes" },
-              ...((clients as any)?.items ?? []),
-            ]}
-          >
-            {(item) => (
-              <SelectItem key={item.id}>
-                {item.name}
-              </SelectItem>
-            )}
-          </Select>
         </div>
-      </div>
 
-      {/* Cards de métricas */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <p className="text-sm text-gray-600">Total de Campanhas</p>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-bold">
-              {generalMetrics?.totalCampaigns ?? 0}
-            </p>
-            <p className="text-sm text-green-600">
-              {generalMetrics?.activeCampaigns ?? 0} ativas
-            </p>
-          </CardBody>
-        </Card>
+        {/* Cards de métricas com Glass Effect */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 stagger-animation">
+          <Card className="glass-card glass-hover group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardHeader className="pb-2 relative">
+              <div className="flex justify-between items-start">
+                <p className="text-sm text-arsenic-400 dark:text-arsenic-300 font-medium">Total de Campanhas</p>
+                <div className="glass-subtle p-2 rounded-lg backdrop-blur-sm">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+              </div>
+            </CardHeader>
+            <CardBody className="relative">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-3xl font-bold text-gm-black dark:text-white value-important">
+                    {generalMetrics?.totalCampaigns ?? 0}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    <span className="text-sm text-success font-medium">
+                      {generalMetrics?.activeCampaigns ?? 0} ativas
+                    </span>
+                  </div>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-primary/10 shimmer"></div>
+              </div>
+            </CardBody>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <p className="text-sm text-gray-600">Total de Leads</p>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-bold">
-              {generalMetrics?.totalLeads ?? 0}
-            </p>
-            <p className="text-sm text-green-600">
-              {generalMetrics?.activeLeads ?? 0} ativos
-            </p>
-          </CardBody>
-        </Card>
+          <Card className="glass-card glass-hover group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-success/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardHeader className="pb-2 relative">
+              <div className="flex justify-between items-start">
+                <p className="text-sm text-arsenic-400 dark:text-arsenic-300 font-medium">Total de Leads</p>
+                <div className="glass-subtle p-2 rounded-lg backdrop-blur-sm">
+                  <svg className="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              </div>
+            </CardHeader>
+            <CardBody className="relative">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-3xl font-bold text-gm-black dark:text-white value-important">
+                    {generalMetrics?.totalLeads ?? 0}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                    <span className="text-sm text-success font-medium">
+                      {generalMetrics?.activeLeads ?? 0} ativos
+                    </span>
+                  </div>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-success/10 shimmer"></div>
+              </div>
+            </CardBody>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <p className="text-sm text-gray-600">Mensagens Enviadas</p>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-bold">
-              {generalMetrics?.messagesSent ?? 0}
-            </p>
-            <p className="text-sm text-red-600">
-              {generalMetrics?.messagesFailed ?? 0} falhadas
-            </p>
-          </CardBody>
-        </Card>
+          <Card className="glass-card glass-hover group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardHeader className="pb-2 relative">
+              <div className="flex justify-between items-start">
+                <p className="text-sm text-arsenic-400 dark:text-arsenic-300 font-medium">Mensagens Enviadas</p>
+                <div className="glass-subtle p-2 rounded-lg backdrop-blur-sm">
+                  <svg className="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </div>
+              </div>
+            </CardHeader>
+            <CardBody className="relative">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-3xl font-bold text-gm-black dark:text-white value-important">
+                    {generalMetrics?.messagesSent ?? 0}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <svg className="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                    </svg>
+                    <span className="text-sm text-danger font-medium">
+                      {generalMetrics?.messagesFailed ?? 0} falhadas
+                    </span>
+                  </div>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-warning/10 shimmer"></div>
+              </div>
+            </CardBody>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <p className="text-sm text-gray-600">Mensagens Recebidas</p>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-bold">
-              {generalMetrics?.totalResponses ?? 0}
-            </p>
-            <p className="text-sm text-default-500">
-              Taxa de sucesso: {generalMetrics?.successRate}%
-            </p>
-          </CardBody>
-        </Card>
-      </div>
+          <Card className="glass-card glass-hover group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardHeader className="pb-2 relative">
+              <div className="flex justify-between items-start">
+                <p className="text-sm text-arsenic-400 dark:text-arsenic-300 font-medium">Mensagens Recebidas</p>
+                <div className="glass-subtle p-2 rounded-lg backdrop-blur-sm">
+                  <svg className="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+              </div>
+            </CardHeader>
+            <CardBody className="relative">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-3xl font-bold text-gm-black dark:text-white value-important">
+                    {generalMetrics?.totalResponses ?? 0}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <div className="h-2 w-16 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary to-primary-600 rounded-full transition-all duration-1000"
+                        style={{ width: `${generalMetrics?.successRate || 0}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-arsenic-500 dark:text-arsenic-400 font-medium">
+                      {generalMetrics?.successRate}%
+                    </span>
+                  </div>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-secondary/10 shimmer"></div>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
 
-      {/* Gráficos */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Gráfico de área - Mensagens por dia */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold">Mensagens por Dia</h3>
-          </CardHeader>
+        {/* Gráficos com Glass Effect */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Gráfico de área - Mensagens por dia */}
+          <Card className="glass-card glass-hover overflow-hidden">
+            <CardHeader className="glass-subtle border-b border-white/10 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gm-black dark:text-white flex items-center gap-2">
+                  <div className="w-1 h-4 bg-primary rounded-full"></div>
+                  Mensagens por Dia
+                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span className="text-xs text-arsenic-400">Enviadas</span>
+                  <div className="w-2 h-2 bg-danger rounded-full ml-2"></div>
+                  <span className="text-xs text-arsenic-400">Falhadas</span>
+                </div>
+              </div>
+            </CardHeader>
           <CardBody>
             <ResponsiveContainer height={300} width="100%">
               <AreaChart data={dailyMessages} margin={{ left: 0, right: 0 }}>
                 <defs>
                   <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00C49F" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#00C49F" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#1B4D95" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#1B4D95" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorFailed" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FF8042" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#FF8042" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#ff4d4d" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#ff4d4d" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -440,17 +547,17 @@ export default function DashboardPage() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Area type="monotone" dataKey="enviadas" stroke="#00C49F" fillOpacity={1} fill="url(#colorSent)" />
-                <Area type="monotone" dataKey="falhadas" stroke="#FF8042" fillOpacity={1} fill="url(#colorFailed)" />
+                <Area type="monotone" dataKey="enviadas" stroke="#1B4D95" fillOpacity={1} fill="url(#colorSent)" />
+                <Area type="monotone" dataKey="falhadas" stroke="#ff4d4d" fillOpacity={1} fill="url(#colorFailed)" />
               </AreaChart>
             </ResponsiveContainer>
           </CardBody>
         </Card>
 
         {/* Gráfico de pizza - Distribuição de mensagens */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold">Distribuição de Mensagens</h3>
+        <Card className="hover:shadow-lg transition-all duration-300">
+          <CardHeader className="border-b border-default-100">
+            <h3 className="text-lg font-semibold text-gm-black dark:text-white">Distribuição de Mensagens</h3>
           </CardHeader>
           <CardBody>
             <ResponsiveContainer height={300} width="100%">
@@ -475,71 +582,128 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Tabelas */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Campanhas recentes */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between w-full items-center">
-              <h3 className="text-lg font-semibold">Campanhas Recentes</h3>
-              <Button as={Link} href="/campaigns" size="sm" variant="bordered">Ver todas</Button>
-            </div>
-          </CardHeader>
-          <CardBody>
-            <Table removeWrapper aria-label="Campanhas recentes">
-              <TableHeader>
-                <TableColumn>Nome</TableColumn>
-                <TableColumn>Status</TableColumn>
-                <TableColumn>Criação</TableColumn>
-              </TableHeader>
-              <TableBody emptyContent="Nenhuma campanha encontrada" items={recentCampaigns || []}>
-                {(item: any) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>
-                      <Chip color={item.status === "active" ? "success" : "default"} size="sm" variant="flat">
-                        {item.status === "active" ? "Ativa" : item.status}
-                      </Chip>
-                    </TableCell>
-                    <TableCell>{new Date(item.created_at).toLocaleString()}</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardBody>
+        {/* Tabelas com Glass Effect */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Campanhas recentes */}
+          <Card className="glass-card overflow-hidden">
+            <CardHeader className="glass-subtle border-b border-white/10 backdrop-blur-sm">
+              <div className="flex justify-between w-full items-center">
+                <h3 className="text-lg font-semibold text-gm-black dark:text-white flex items-center gap-2">
+                  <div className="w-1 h-4 bg-primary rounded-full"></div>
+                  Campanhas Recentes
+                </h3>
+                <Button 
+                  as={Link} 
+                  href="/campaigns" 
+                  size="sm" 
+                  className="glass-button text-primary hover:text-white hover:bg-primary/20"
+                >
+                  Ver todas →
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody className="p-0">
+              <Table 
+                removeWrapper 
+                aria-label="Campanhas recentes"
+                classNames={{
+                  base: "bg-transparent",
+                  table: "min-h-[200px]",
+                  thead: "[&>tr]:first:shadow-none",
+                  tbody: "[&>tr]:hover:glass-subtle [&>tr]:transition-all",
+                  tr: "hover:bg-white/5 dark:hover:bg-white/5",
+                  td: "py-3 text-sm",
+                  th: "bg-transparent text-arsenic-400 font-medium text-xs uppercase tracking-wider"
+                }}
+              >
+                <TableHeader>
+                  <TableColumn>Nome</TableColumn>
+                  <TableColumn>Status</TableColumn>
+                  <TableColumn>Criação</TableColumn>
+                </TableHeader>
+                <TableBody emptyContent="Nenhuma campanha encontrada" items={recentCampaigns || []}>
+                  {(item: any) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          color={item.status === "active" ? "success" : "default"} 
+                          size="sm" 
+                          variant="flat"
+                          className="glass-subtle"
+                          startContent={<div className={`w-2 h-2 rounded-full ${item.status === "active" ? "bg-success animate-pulse" : "bg-default-400"}`} />}
+                        >
+                          {item.status === "active" ? "Ativa" : item.status}
+                        </Chip>
+                      </TableCell>
+                      <TableCell className="text-arsenic-400">{new Date(item.created_at).toLocaleString('pt-BR')}</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardBody>
         </Card>
 
-        {/* Leads recentes */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between w-full items-center">
-              <h3 className="text-lg font-semibold">Leads Recentes</h3>
-              <Button as={Link} href="/leads" size="sm" variant="bordered">Ver todos</Button>
-            </div>
-          </CardHeader>
-          <CardBody>
-            <Table removeWrapper aria-label="Leads recentes">
-              <TableHeader>
-                <TableColumn>Nome</TableColumn>
-                <TableColumn>Telefone</TableColumn>
-                <TableColumn>Status</TableColumn>
-              </TableHeader>
-              <TableBody emptyContent="Nenhum lead encontrado" items={recentLeads || []}>
-                {(item: any) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.phone}</TableCell>
-                    <TableCell>
-                      <Chip color={!item.is_opted_out ? "success" : "default"} size="sm" variant="flat">
-                        {!item.is_opted_out ? "Ativo" : "Descadastrado"}
-                      </Chip>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardBody>
-        </Card>
+          {/* Leads recentes */}
+          <Card className="glass-card overflow-hidden">
+            <CardHeader className="glass-subtle border-b border-white/10 backdrop-blur-sm">
+              <div className="flex justify-between w-full items-center">
+                <h3 className="text-lg font-semibold text-gm-black dark:text-white flex items-center gap-2">
+                  <div className="w-1 h-4 bg-success rounded-full"></div>
+                  Leads Recentes
+                </h3>
+                <Button 
+                  as={Link} 
+                  href="/leads" 
+                  size="sm" 
+                  className="glass-button text-success hover:text-white hover:bg-success/20"
+                >
+                  Ver todos →
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody className="p-0">
+              <Table 
+                removeWrapper 
+                aria-label="Leads recentes"
+                classNames={{
+                  base: "bg-transparent",
+                  table: "min-h-[200px]",
+                  thead: "[&>tr]:first:shadow-none",
+                  tbody: "[&>tr]:hover:glass-subtle [&>tr]:transition-all",
+                  tr: "hover:bg-white/5 dark:hover:bg-white/5",
+                  td: "py-3 text-sm",
+                  th: "bg-transparent text-arsenic-400 font-medium text-xs uppercase tracking-wider"
+                }}
+              >
+                <TableHeader>
+                  <TableColumn>Nome</TableColumn>
+                  <TableColumn>Telefone</TableColumn>
+                  <TableColumn>Status</TableColumn>
+                </TableHeader>
+                <TableBody emptyContent="Nenhum lead encontrado" items={recentLeads || []}>
+                  {(item: any) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-arsenic-400">{item.phone}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          color={!item.is_opted_out ? "success" : "default"} 
+                          size="sm" 
+                          variant="flat"
+                          className="glass-subtle"
+                          startContent={<div className={`w-2 h-2 rounded-full ${!item.is_opted_out ? "bg-success animate-pulse" : "bg-default-400"}`} />}
+                        >
+                          {!item.is_opted_out ? "Ativo" : "Descadastrado"}
+                        </Chip>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardBody>
+          </Card>
+        </div>
       </div>
     </main>
   );

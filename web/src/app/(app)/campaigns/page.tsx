@@ -165,20 +165,22 @@ export default function CampaignsPage() {
       case "progress":
         const progress = getProgress(campaign);
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="flex-1">
-              <div className="flex justify-between text-xs mb-1">
-                <span>{campaign.stats.sent_count}</span>
-                <span>{campaign.stats.total_targets}</span>
+              <div className="flex justify-between text-xs mb-1 font-medium">
+                <span className="text-primary">{campaign.stats.sent_count}</span>
+                <span className="text-arsenic-400">{campaign.stats.total_targets}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gradient-to-r from-success/10 to-success/5 rounded-full h-2.5 overflow-hidden">
                 <div 
-                  className="bg-primary rounded-full h-2 transition-all"
+                  className="bg-gradient-to-r from-success to-success-600 rounded-full h-full transition-all duration-500 relative"
                   style={{ width: `${progress}%` }}
                 />
               </div>
             </div>
-            <span className="text-xs font-medium">{progress}%</span>
+            <div className="text-center">
+              <span className="text-lg font-bold text-success">{progress}%</span>
+            </div>
           </div>
         );
       
@@ -222,37 +224,51 @@ export default function CampaignsPage() {
 
   return (
     <main className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold">Campanhas</h1>
-          <p className="text-gray-600 mt-1">
-            Gerencie suas campanhas de disparos
-          </p>
+      {/* Header com glass effect */}
+      <div className="glass-card rounded-2xl p-6 animate-fadeIn">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gm-black dark:text-white">Campanhas</h1>
+            <p className="text-arsenic-500 dark:text-arsenic-300 mt-1">
+              Gerencie suas campanhas de disparos WhatsApp
+            </p>
+          </div>
+          <Button
+            color="primary"
+            size="lg"
+            startContent={<Plus className="w-5 h-5" />}
+            onPress={() => router.push("/campaigns/create")}
+            className="bg-gradient-to-r from-primary to-primary-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            Nova Campanha
+          </Button>
         </div>
-        <Button
-          color="primary"
-          startContent={<Plus className="w-4 h-4" />}
-          onPress={() => router.push("/campaigns/create")}
-        >
-          Nova Campanha
-        </Button>
       </div>
 
-      <Card>
-        <CardBody>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <Spinner size="lg" />
+      <div className="glass-card rounded-2xl p-6 animate-slideInLeft">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-center">
+              <Spinner size="lg" color="primary" />
+              <p className="text-arsenic-500 mt-4">Carregando campanhas...</p>
             </div>
-          ) : campaigns && campaigns.length > 0 ? (
-            <Table aria-label="Tabela de campanhas">
-              <TableHeader>
-                <TableColumn key="name">CAMPANHA</TableColumn>
-                <TableColumn key="status">STATUS</TableColumn>
-                <TableColumn key="progress">PROGRESSO</TableColumn>
-                <TableColumn key="schedule">AGENDAMENTO</TableColumn>
-                <TableColumn key="actions">AÇÕES</TableColumn>
-              </TableHeader>
+          </div>
+        ) : campaigns && campaigns.length > 0 ? (
+          <Table 
+            aria-label="Tabela de campanhas"
+            classNames={{
+              wrapper: "bg-transparent",
+              th: "bg-primary/10 text-primary font-semibold uppercase text-xs",
+              td: "text-arsenic-500 dark:text-arsenic-300"
+            }}
+          >
+            <TableHeader>
+              <TableColumn key="name">CAMPANHA</TableColumn>
+              <TableColumn key="status">STATUS</TableColumn>
+              <TableColumn key="progress">PROGRESSO</TableColumn>
+              <TableColumn key="schedule">AGENDAMENTO</TableColumn>
+              <TableColumn key="actions">AÇÕES</TableColumn>
+            </TableHeader>
               <TableBody items={campaigns}>
                 {(campaign) => (
                   <TableRow key={campaign.id}>
@@ -265,19 +281,27 @@ export default function CampaignsPage() {
             </Table>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600 mb-4">
+              <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
+                <Plus className="w-12 h-12 text-primary" />
+              </div>
+              <p className="text-arsenic-500 dark:text-arsenic-300 mb-4 text-lg">
                 Nenhuma campanha encontrada
+              </p>
+              <p className="text-arsenic-400 mb-6 text-sm">
+                Crie sua primeira campanha e comece a enviar mensagens
               </p>
               <Button
                 color="primary"
+                size="lg"
                 onPress={() => router.push("/campaigns/create")}
+                className="bg-gradient-to-r from-primary to-primary-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                startContent={<Plus className="w-5 h-5" />}
               >
                 Criar Primeira Campanha
               </Button>
             </div>
           )}
-        </CardBody>
-      </Card>
+      </div>
     </main>
   );
 }
