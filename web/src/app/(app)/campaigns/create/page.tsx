@@ -16,6 +16,7 @@ import { useClients } from "@/hooks/useClients";
 import { useClientInstances } from "@/hooks/useEvoInstances";
 import { createSupabaseClient } from "@/lib/supabaseClient";
 import { WhatsAppPreview } from "@/components/WhatsAppPreview";
+import { uploadToMediaBucket } from "@/lib/storage";
 
 type Step = "client" | "instance" | "content" | "schedule" | "review";
 
@@ -97,13 +98,13 @@ export default function CreateCampaignPage() {
       let mediaPath = campaignData.mediaPath;
 
       if (campaignData.mediaFile && campaignData.contentType !== "text") {
-        const fileName = `${Date.now()}-${sanitizeFileName(campaignData.mediaFile.name)}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("media")
-          .upload(fileName, campaignData.mediaFile);
-
-        if (uploadError) throw uploadError;
-        mediaPath = uploadData.path;
+        if (campaignData.mediaFile.size > 500 * 1024 * 1024) {
+          throw new Error(
+            "Arquivo de mídia maior que 500MB. Comprima o arquivo ou selecione um menor.",
+          );
+        }
+        const { path } = await uploadToMediaBucket(campaignData.mediaFile);
+        mediaPath = path;
       }
 
       // Criar campanha via API
