@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export async function POST(req: Request) {
   try {
@@ -34,17 +34,32 @@ export async function POST(req: Request) {
     const { data: me } = await supabaseSession.from("user_profiles").select("role").eq("id", user.id).single();
     if (me?.role !== "admin") return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Configuração ausente: SUPABASE_SERVICE_ROLE_KEY" }, { status: 500 });
+    }
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
     // Usar fluxo normal de signup (mais simples e confiável)
+    // Determinar URL de redirecionamento segura a partir do request
+    const hdrs = headers();
+    const xfProto = hdrs.get("x-forwarded-proto") || "https";
+    const xfHost = hdrs.get("x-forwarded-host") || hdrs.get("host");
+    const inferredOrigin = xfHost ? `${xfProto}://${xfHost}` : null;
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || inferredOrigin || "")
+      .replace(/\/$/, "");
+
+    const redirectUrl = siteUrl
+      ? `${siteUrl}/auth/setup-password?type=team-invite&role=${role}`
+      : undefined;
+
     const { data: authRes, error: authError } = await supabase.auth.signUp({
       email,
       password: Math.random().toString(36).slice(-12), // senha temporária aleatória
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/setup-password?type=team-invite&role=${role}`,
+        emailRedirectTo: redirectUrl,
         data: {
           role: role,
           invited_by_admin: true,
@@ -53,7 +68,13 @@ export async function POST(req: Request) {
       }
     });
     
-    if (authError) return NextResponse.json({ error: authError.message }, { status: 400 });
+    if (authError) {
+      // Mensagem mais amigável para URL não permitida
+      const msg = authError.message?.includes("allow-list")
+        ? "URL de redirecionamento não permitida no Supabase Auth. Adicione o domínio do site em Authentication → URL Configuration → Redirect URLs."
+        : authError.message;
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
 
     const userId = authRes?.user?.id;
     if (!userId) return NextResponse.json({ error: "Falha ao criar usuário" }, { status: 400 });
