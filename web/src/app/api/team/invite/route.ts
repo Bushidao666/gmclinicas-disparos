@@ -57,8 +57,9 @@ export async function POST(req: Request) {
     const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || inferredOrigin || "")
       .replace(/\/$/, "");
 
+    const nextPath = `/auth/setup-password?type=team-invite&role=${role}`;
     const redirectUrl = siteUrl
-      ? `${siteUrl}/auth/setup-password?type=team-invite&role=${role}`
+      ? `${siteUrl}/auth/confirm?next=${encodeURIComponent(nextPath)}`
       : undefined;
 
     const { data: authRes, error: authError } = await supabase.auth.signUp({

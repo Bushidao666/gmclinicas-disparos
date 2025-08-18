@@ -6,12 +6,47 @@ import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+  const code = searchParams.get('code');
   const token_hash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
   const next = searchParams.get('next') ?? '/';
   const redirectTo = request.nextUrl.clone();
   redirectTo.pathname = next;
 
+  // Fluxo 1: PKCE / code exchange (mais comum quando usamos emailRedirectTo)
+  if (code) {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get: (name: string) => cookieStore.get(name)?.value,
+          set: (name: string, value: string, options: any) => {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove: (name: string, options: any) => {
+            cookieStore.set({ name, value: "", ...options });
+          },
+        },
+      }
+    );
+
+    const { error } = await supabase.auth.exchangeCodeForSession({ code });
+    if (!error) {
+      // Se é convite de equipe, redirecionar para setup-password
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata?.invited_by_admin) {
+        const role = user.user_metadata?.role || 'collaborator';
+        return NextResponse.redirect(
+          new URL(`/auth/setup-password?type=team-invite&role=${role}`, request.url)
+        );
+      }
+      return NextResponse.redirect(redirectTo);
+    }
+  }
+
+  // Fluxo 2: Email OTP (token_hash + type)
   if (token_hash && type) {
     const cookieStore = await cookies();
     const supabase = createServerClient(
