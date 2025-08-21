@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
@@ -13,10 +14,11 @@ import {
   TableRow, 
   TableCell 
 } from "@heroui/table";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/modal";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus, Play, Pause, X } from "lucide-react";
+import { Plus, Play, Pause, X, Calendar } from "lucide-react";
 
 import { createSupabaseClient } from "@/lib/supabaseClient";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
@@ -63,6 +65,60 @@ export default function CampaignsPage() {
   const router = useRouter();
   const supabase = createSupabaseClient();
   const queryClient = useQueryClient();
+
+  const [isWeekdaysOpen, setIsWeekdaysOpen] = useState(false);
+  const [weekdaysSel, setWeekdaysSel] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [weekdaysCampaignId, setWeekdaysCampaignId] = useState<string | null>(null);
+
+  async function handleAction(
+    campaignId: string,
+    action: "pause" | "resume" | "cancel",
+  ) {
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/${action}`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Falha ao ${action} campanha`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+    } catch (e) {
+      console.error(e);
+      alert(
+        e instanceof Error
+          ? e.message
+          : `Não foi possível executar a ação: ${action}`,
+      );
+    }
+  }
+
+  const toggleWeekday = (d: number) => {
+    const set = new Set(weekdaysSel);
+    if (set.has(d)) set.delete(d);
+    else set.add(d);
+    setWeekdaysSel(Array.from(set).sort());
+  };
+
+  async function applyWeekdays() {
+    if (!weekdaysCampaignId) return;
+    try {
+      const res = await fetch(`/api/campaigns/${weekdaysCampaignId}/apply-weekdays`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekdays: weekdaysSel }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Falha ao aplicar periodicidade");
+      }
+      setIsWeekdaysOpen(false);
+      setWeekdaysCampaignId(null);
+      await queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erro ao aplicar periodicidade");
+    }
+  }
 
   const { data: campaigns, isLoading, refetch } = useQuery({
     queryKey: ["campaigns"],
@@ -199,18 +255,90 @@ export default function CampaignsPage() {
       case "actions":
         return (
           <div className="flex gap-1">
+            {/* Periodicidade */}
+            {campaign.status !== "completed" && campaign.status !== "canceled" && (
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                onPress={() => {
+                  setWeekdaysCampaignId(campaign.id);
+                  setIsWeekdaysOpen(true);
+                }}
+                title="Definir dias da semana"
+              >
+                <Calendar className="w-4 h-4" />
+              </Button>
+            )}
             {campaign.status === "active" && (
-              <Button isIconOnly size="sm" variant="flat">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                onPress={() => handleAction(campaign.id, "pause")}
+                title="Pausar campanha"
+              >
                 <Pause className="w-4 h-4" />
               </Button>
             )}
             {campaign.status === "paused" && (
-              <Button isIconOnly size="sm" variant="flat" color="success">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                color="success"
+                onPress={() => handleAction(campaign.id, "resume")}
+                title="Retomar campanha"
+              >
                 <Play className="w-4 h-4" />
               </Button>
             )}
             {(campaign.status === "active" || campaign.status === "paused") && (
-              <Button isIconOnly size="sm" variant="flat" color="danger">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                color="danger"
+                onPress={() => {
+                  if (
+                    confirm(
+                      "Tem certeza que deseja cancelar esta campanha? Os envios pendentes serão cancelados.",
+                    )
+                  ) {
+                    handleAction(campaign.id, "cancel");
+                  }
+                }}
+                title="Cancelar campanha"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+            {(campaign.status === "draft" || campaign.status === "canceled") && (
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                color="danger"
+                onPress={async () => {
+                  if (confirm("Excluir permanentemente esta campanha?")) {
+                    await handleAction(campaign.id, "cancel");
+                    // Depois do cancel (noDraft ignora), chamar delete
+                    try {
+                      const res = await fetch(`/api/campaigns/${campaign.id}/delete`, {
+                        method: "POST",
+                      });
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.error || "Erro ao excluir");
+                      }
+                      await queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+                    } catch (e) {
+                      alert(e instanceof Error ? e.message : "Falha ao excluir campanha");
+                    }
+                  }
+                }}
+                title="Excluir campanha"
+              >
                 <X className="w-4 h-4" />
               </Button>
             )}
@@ -302,6 +430,47 @@ export default function CampaignsPage() {
             </div>
           )}
       </div>
+      <Modal isOpen={isWeekdaysOpen} onOpenChange={(open) => setIsWeekdaysOpen(open)}>
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Definir dias da semana</ModalHeader>
+              <ModalBody>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { d: 0, l: "Dom" },
+                    { d: 1, l: "Seg" },
+                    { d: 2, l: "Ter" },
+                    { d: 3, l: "Qua" },
+                    { d: 4, l: "Qui" },
+                    { d: 5, l: "Sex" },
+                    { d: 6, l: "Sáb" },
+                  ].map((opt) => {
+                    const checked = weekdaysSel.includes(opt.d);
+                    return (
+                      <button
+                        key={opt.d}
+                        type="button"
+                        className={`px-3 py-1 rounded-full text-sm border ${checked ? "bg-primary text-white border-primary" : "bg-transparent"}`}
+                        onClick={() => toggleWeekday(opt.d)}
+                      >
+                        {opt.l}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Serão reagendados apenas os envios pendentes desta campanha.
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={() => onClose()}>Cancelar</Button>
+                <Button color="primary" onPress={applyWeekdays}>Aplicar</Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </main>
   );
 }
