@@ -64,6 +64,29 @@ export default function CampaignsPage() {
   const supabase = createSupabaseClient();
   const queryClient = useQueryClient();
 
+  async function handleAction(
+    campaignId: string,
+    action: "pause" | "resume" | "cancel",
+  ) {
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/${action}`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Falha ao ${action} campanha`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+    } catch (e) {
+      console.error(e);
+      alert(
+        e instanceof Error
+          ? e.message
+          : `Não foi possível executar a ação: ${action}`,
+      );
+    }
+  }
+
   const { data: campaigns, isLoading, refetch } = useQuery({
     queryKey: ["campaigns"],
     queryFn: async () => {
@@ -200,17 +223,74 @@ export default function CampaignsPage() {
         return (
           <div className="flex gap-1">
             {campaign.status === "active" && (
-              <Button isIconOnly size="sm" variant="flat">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                onPress={() => handleAction(campaign.id, "pause")}
+                title="Pausar campanha"
+              >
                 <Pause className="w-4 h-4" />
               </Button>
             )}
             {campaign.status === "paused" && (
-              <Button isIconOnly size="sm" variant="flat" color="success">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                color="success"
+                onPress={() => handleAction(campaign.id, "resume")}
+                title="Retomar campanha"
+              >
                 <Play className="w-4 h-4" />
               </Button>
             )}
             {(campaign.status === "active" || campaign.status === "paused") && (
-              <Button isIconOnly size="sm" variant="flat" color="danger">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                color="danger"
+                onPress={() => {
+                  if (
+                    confirm(
+                      "Tem certeza que deseja cancelar esta campanha? Os envios pendentes serão cancelados.",
+                    )
+                  ) {
+                    handleAction(campaign.id, "cancel");
+                  }
+                }}
+                title="Cancelar campanha"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+            {(campaign.status === "draft" || campaign.status === "canceled") && (
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                color="danger"
+                onPress={async () => {
+                  if (confirm("Excluir permanentemente esta campanha?")) {
+                    await handleAction(campaign.id, "cancel");
+                    // Depois do cancel (noDraft ignora), chamar delete
+                    try {
+                      const res = await fetch(`/api/campaigns/${campaign.id}/delete`, {
+                        method: "POST",
+                      });
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.error || "Erro ao excluir");
+                      }
+                      await queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+                    } catch (e) {
+                      alert(e instanceof Error ? e.message : "Falha ao excluir campanha");
+                    }
+                  }
+                }}
+                title="Excluir campanha"
+              >
                 <X className="w-4 h-4" />
               </Button>
             )}

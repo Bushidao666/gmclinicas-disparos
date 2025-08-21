@@ -32,6 +32,7 @@ interface CampaignData {
   startTime: string;
   dailyVolume: number;
   targetCount?: number;
+  weekdays?: number[]; // 0..6 (Dom..Sáb)
 }
 
 const steps: { id: Step; label: string; description: string }[] = [
@@ -90,6 +91,7 @@ export default function CreateCampaignPage() {
     startTime: "09:00",
     dailyVolume: 100,
     targetCount: undefined,
+    weekdays: [1, 2, 3, 4, 5],
   });
 
   const createCampaignMutation = useMutation({
@@ -134,7 +136,27 @@ export default function CreateCampaignPage() {
         throw new Error(error.error || "Erro ao criar campanha");
       }
 
-      return res.json();
+      const created = await res.json();
+      const createdId = created?.campaign_id ?? created?.campaign?.id ?? created?.id;
+
+      // Se houver periodicidade definida, aplicar
+      if (createdId && Array.isArray(campaignData.weekdays) && campaignData.weekdays.length) {
+        try {
+          await fetch(`/api/campaigns/${createdId}/apply-weekdays`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              weekdays: campaignData.weekdays,
+              start_at: startAt,
+              daily_volume: campaignData.dailyVolume,
+            }),
+          });
+        } catch (e) {
+          console.error("Falha ao aplicar periodicidade:", e);
+        }
+      }
+
+      return created;
     },
     onSuccess: () => {
       router.push("/campaigns");
@@ -454,6 +476,41 @@ export default function CreateCampaignPage() {
                 />
               </div>
 
+              <div>
+                <p className="text-sm font-medium mb-1">Dias da Semana</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { d: 0, l: "Dom" },
+                    { d: 1, l: "Seg" },
+                    { d: 2, l: "Ter" },
+                    { d: 3, l: "Qua" },
+                    { d: 4, l: "Qui" },
+                    { d: 5, l: "Sex" },
+                    { d: 6, l: "Sáb" },
+                  ].map((opt) => {
+                    const checked = campaignData.weekdays?.includes(opt.d) ?? false;
+                    return (
+                      <button
+                        key={opt.d}
+                        type="button"
+                        className={`px-3 py-1 rounded-full text-sm border ${checked ? "bg-primary text-white border-primary" : "bg-transparent"}`}
+                        onClick={() => {
+                          const set = new Set(campaignData.weekdays || []);
+                          if (set.has(opt.d)) set.delete(opt.d);
+                          else set.add(opt.d);
+                          setCampaignData({ ...campaignData, weekdays: Array.from(set).sort() });
+                        }}
+                      >
+                        {opt.l}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Se nenhum dia for marcado, enviaremos todos os dias.
+                </p>
+              </div>
+
               <Input
                 isRequired
                 label="Volume Diário"
@@ -504,6 +561,11 @@ export default function CreateCampaignPage() {
                     `Enviando ${campaignData.dailyVolume} mensagens por dia para todos os leads disponíveis.`
                   )}
                 </p>
+                {campaignData.weekdays && campaignData.weekdays.length > 0 && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    Dias: {campaignData.weekdays.sort().map((d) => ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d]).join(", ")}
+                  </p>
+                )}
               </div>
             </>
           )}
