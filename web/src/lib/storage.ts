@@ -2,6 +2,7 @@
 
 import { createSupabaseClient } from "@/lib/supabaseClient";
 import * as tus from "tus-js-client";
+import { ensureMp4File } from "@/lib/video";
 
 export async function uploadToMediaBucket(
   file: File,
@@ -91,11 +92,41 @@ export async function uploadResumableToMediaBucket(
 export async function uploadMediaSmart(
   file: File,
 ): Promise<{ path: string }> {
-  const isVideoOrAudio = /^(video|audio)\//.test(file.type || "");
-  const isLarge = file.size > 1 * 1024 * 1024; // > 1MB
+  // Converter vídeos não-MP4 para MP4 antes do upload
+  let fileToUpload = file;
+  const isVideo = /^video\//.test(file.type || "");
+  if (isVideo && file.type !== "video/mp4") {
+    // Preferir conversão no Edge (FFmpeg em servidor) para evitar custo no cliente
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name);
+      const res = await fetch("/api/convert-video", { method: "POST", body: fd });
+      if (res.ok) {
+        const { path } = await res.json();
+        // Se já recebemos um path convertido no bucket, retornamos direto
+        return { path };
+      }
+    } catch (_e) {
+      // Ignorar e cair no fallback local
+    }
+
+    // Fallback: conversão local com ffmpeg.wasm
+    try {
+      fileToUpload = await ensureMp4File(file);
+    } catch (_e) {
+      // Se falhar a conversão, seguimos com o arquivo original
+    }
+  }
+
+  const isVideoOrAudio = /^(video|audio)\//.test(fileToUpload.type || "");
+  const isLarge = (fileToUpload.size || file.size) > 1 * 1024 * 1024; // > 1MB
   // Para vídeos/áudios ou arquivos grandes, usar TUS; caso contrário, upload padrão
   if (isVideoOrAudio || isLarge) {
-    return uploadResumableToMediaBucket(file);
+    return uploadResumableToMediaBucket(fileToUpload);
   }
+<<<<<<< Current (Your changes)
   return uploadToMediaBucket(file);
+=======
+  return uploadToMediaBucket(fileToUpload);
+>>>>>>> Incoming (Background Agent changes)
 }

@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
@@ -14,7 +15,6 @@ import { format } from "date-fns";
 
 import { useClients } from "@/hooks/useClients";
 import { useClientInstances } from "@/hooks/useEvoInstances";
-import { createSupabaseClient } from "@/lib/supabaseClient";
 import { WhatsAppPreview } from "@/components/WhatsAppPreview";
 import { uploadMediaSmart } from "@/lib/storage";
 
@@ -77,7 +77,6 @@ function sanitizeFileName(originalName: string): string {
 
 export default function CreateCampaignPage() {
   const router = useRouter();
-  const supabase = createSupabaseClient();
   const { data: clients } = useClients();
 
   const [currentStep, setCurrentStep] = useState<Step>("client");
