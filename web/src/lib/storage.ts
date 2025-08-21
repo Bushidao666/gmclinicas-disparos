@@ -96,11 +96,25 @@ export async function uploadMediaSmart(
   let fileToUpload = file;
   const isVideo = /^video\//.test(file.type || "");
   if (isVideo && file.type !== "video/mp4") {
+    // Preferir conversão no Edge (FFmpeg em servidor) para evitar custo no cliente
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name);
+      const res = await fetch("/api/convert-video", { method: "POST", body: fd });
+      if (res.ok) {
+        const { path } = await res.json();
+        // Se já recebemos um path convertido no bucket, retornamos direto
+        return { path };
+      }
+    } catch (_e) {
+      // Ignorar e cair no fallback local
+    }
+
+    // Fallback: conversão local com ffmpeg.wasm
     try {
       fileToUpload = await ensureMp4File(file);
-    } catch (e) {
-      // Se falhar a conversão, seguimos com o arquivo original para não bloquear o fluxo
-      // Logs podem ser adicionados futuramente (telemetria)
+    } catch (_e) {
+      // Se falhar a conversão, seguimos com o arquivo original
     }
   }
 
