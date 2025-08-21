@@ -124,9 +124,5 @@ export async function uploadMediaSmart(
   if (isVideoOrAudio || isLarge) {
     return uploadResumableToMediaBucket(fileToUpload);
   }
-<<<<<<< Current (Your changes)
-  return uploadToMediaBucket(file);
-=======
   return uploadToMediaBucket(fileToUpload);
->>>>>>> Incoming (Background Agent changes)
 }
