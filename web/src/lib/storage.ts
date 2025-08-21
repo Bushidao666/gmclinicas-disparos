@@ -2,6 +2,7 @@
 
 import { createSupabaseClient } from "@/lib/supabaseClient";
 import * as tus from "tus-js-client";
+import { ensureMp4File } from "@/lib/video";
 
 export async function uploadToMediaBucket(
   file: File,
@@ -91,11 +92,23 @@ export async function uploadResumableToMediaBucket(
 export async function uploadMediaSmart(
   file: File,
 ): Promise<{ path: string }> {
-  const isVideoOrAudio = /^(video|audio)\//.test(file.type || "");
-  const isLarge = file.size > 1 * 1024 * 1024; // > 1MB
+  // Converter vídeos não-MP4 para MP4 antes do upload
+  let fileToUpload = file;
+  const isVideo = /^video\//.test(file.type || "");
+  if (isVideo && file.type !== "video/mp4") {
+    try {
+      fileToUpload = await ensureMp4File(file);
+    } catch (e) {
+      // Se falhar a conversão, seguimos com o arquivo original para não bloquear o fluxo
+      // Logs podem ser adicionados futuramente (telemetria)
+    }
+  }
+
+  const isVideoOrAudio = /^(video|audio)\//.test(fileToUpload.type || "");
+  const isLarge = (fileToUpload.size || file.size) > 1 * 1024 * 1024; // > 1MB
   // Para vídeos/áudios ou arquivos grandes, usar TUS; caso contrário, upload padrão
   if (isVideoOrAudio || isLarge) {
-    return uploadResumableToMediaBucket(file);
+    return uploadResumableToMediaBucket(fileToUpload);
   }
-  return uploadToMediaBucket(file);
+  return uploadToMediaBucket(fileToUpload);
 }
